@@ -1,75 +1,45 @@
-# Nuxt Minimal Starter
+# Calcetto Punti
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+App web per gestire classifiche e punteggi di calciobalilla tra amici. Permette di organizzare competizioni round-robin con squadre da 2 giocatori, generare calendari automatici o manuali, registrare risultati e visualizzare classifiche in tempo reale.
+
+## Funzionalità
+
+- **Gestione giocatori** — Aggiungi, modifica, disabilita o elimina giocatori con protezione se già assegnati a squadre
+- **Competizioni** — Crea arene di gioco con punteggio configurabile (vittoria, pareggio, sconfitta)
+- **Squadre** — Composizione automatica o manuale di coppie, con vincolo di unicità per giocatore
+- **Calendario** — Generazione automatica round-robin o inserimento manuale delle partite
+- **Risultati e classifica** — Inserimento punteggi, classifica ordinata per punti, differenza reti e gol fatti
+- **Temi** — Scelta tra temi chiari e scuri (cupcake, emerald, dracula)
+
+## Stack tecnologico
+
+- **Frontend:** Nuxt 3, Vue 3 (Composition API), Tailwind CSS, DaisyUI
+- **Backend:** Nitro (server engine di Nuxt), API REST
+- **Database:** SQLite (better-sqlite3) con Drizzle ORM
 
 ## Setup
 
-Make sure to install dependencies:
-
 ```bash
-# npm
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+Inizializza il database:
 
 ```bash
-# npm
+npx drizzle-kit push
+```
+
+## Avvio in sviluppo
+
+```bash
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+L'app sarà disponibile su `http://localhost:3000`.
 
-Build the application for production:
+## Build di produzione
 
 ```bash
-# npm
 npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
 npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
 ```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
