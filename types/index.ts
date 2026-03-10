@@ -11,6 +11,7 @@ export interface Competition {
   id: number;
   name: string;
   winPoints: number;
+  calendarMode: 'auto' | 'manual' | null;
   createdAt: string;
 }
 

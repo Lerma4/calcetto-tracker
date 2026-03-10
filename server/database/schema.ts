@@ -13,6 +13,7 @@ export const competitions = sqliteTable('competitions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   name: text('name').notNull(),
   winPoints: integer('win_points').default(3).notNull(),
+  calendarMode: text('calendar_mode', { enum: ['auto', 'manual'] }),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 
