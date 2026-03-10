@@ -29,7 +29,7 @@ defineProps<{
           <h3 class="text-sm font-black uppercase tracking-[0.4em] opacity-60">Circuiti Attivi</h3>
           <div class="flex items-baseline gap-4 mt-2">
              <span class="text-8xl font-black font-heading tracking-tighter leading-none">{{ competitionsCount }}</span>
-             <span class="text-xl font-bold italic opacity-80 uppercase tracking-widest">Arene</span>
+             <span class="text-xl font-bold italic opacity-80 uppercase tracking-widest">Tornei</span>
           </div>
            <p class="text-xs font-bold opacity-50 mt-4 max-w-[200px]">Competizioni in corso gestite dal sistema Round-Robin.</p>
        </div>

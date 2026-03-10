@@ -76,9 +76,9 @@ const handleStartManualCalendar = () => {
 }
 
 // Match results - local scores for editing
-const localScores = ref<Record<number, { score1: number; score2: number }>>({})
+const localScores = ref<Record<number, { score1: number | null; score2: number | null }>>({})
 
-const getScores = (matchId: number, defaultScore1: number, defaultScore2: number) => {
+const getScores = (matchId: number, defaultScore1: number | null, defaultScore2: number | null) => {
   if (!localScores.value[matchId]) {
     localScores.value[matchId] = { score1: defaultScore1, score2: defaultScore2 }
   }
@@ -88,8 +88,14 @@ const getScores = (matchId: number, defaultScore1: number, defaultScore2: number
 const handleSaveResult = async (matchId: number) => {
   const scores = localScores.value[matchId]
   if (!scores) return
-  await $fetch(`/api/matches/${matchId}`, { method: 'PUT', body: { score1: scores.score1, score2: scores.score2 } })
-  await refresh()
+  errorMsg.value = ''
+  try {
+    await $fetch(`/api/matches/${matchId}`, { method: 'PUT', body: { score1: scores.score1, score2: scores.score2 } })
+    await refresh()
+  } catch (e: any) {
+    errorMsg.value = e.data?.statusMessage || 'Errore salvataggio risultato'
+    setTimeout(() => errorMsg.value = '', 4000)
+  }
 }
 
 // Matches grouped by matchday
@@ -415,12 +421,12 @@ const handleSaveMatchTeams = async (matchId: number) => {
                   <input type="number" min="0"
                     class="input input-bordered input-sm rounded-lg w-16 text-center font-black"
                     :value="getScores(match.id, match.score1, match.score2).score1"
-                    @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score1: Number(($event.target as HTMLInputElement).value) }" />
+                    @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score1: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
                   <span class="font-black opacity-30">vs</span>
                   <input type="number" min="0"
                     class="input input-bordered input-sm rounded-lg w-16 text-center font-black"
                     :value="getScores(match.id, match.score1, match.score2).score2"
-                    @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score2: Number(($event.target as HTMLInputElement).value) }" />
+                    @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score2: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
                 </div>
                 <span class="font-black flex-1 min-w-[100px]" :title="teamPlayers(match.team2Id)">
                   {{ teamName(match.team2Id) }}
@@ -458,44 +464,68 @@ const handleSaveMatchTeams = async (matchId: number) => {
       </div>
     </div>
 
-    <!-- Standings Section -->
-    <div v-if="hasCalendar" class="glass-card rounded-[2rem] p-8 overflow-x-auto">
-      <h2 class="text-lg font-black uppercase tracking-widest opacity-60 mb-6">
-        <Icon name="lucide:bar-chart-3" class="inline w-5 h-5 mr-2" />Classifica
+    <div v-if="hasCalendar" class="glass-card rounded-[2rem] p-8 overflow-x-auto shadow-2xl relative overflow-hidden group">
+      <div class="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
+      
+      <h2 class="text-xl font-black uppercase tracking-[0.2em] bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-8 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+          <Icon name="lucide:trophy" class="w-5 h-5 text-primary" />
+        </div>
+        Classifica Generale
       </h2>
-      <table class="table w-full">
+
+      <table class="table w-full border-separate border-spacing-y-2">
         <thead>
-          <tr class="text-xs font-black uppercase tracking-widest opacity-50">
-            <th>#</th>
-            <th>Squadra</th>
-            <th class="text-center">G</th>
-            <th class="text-center">V</th>
-            <th class="text-center">P</th>
-            <th class="text-center">S</th>
-            <th class="text-center">GF</th>
-            <th class="text-center">GS</th>
-            <th class="text-center">DR</th>
-            <th class="text-center">PTS</th>
+          <tr class="text-[10px] font-black uppercase tracking-[0.1em] text-center opacity-40 border-none">
+            <th class="text-left pl-6">Pos</th>
+            <th class="text-left w-full">Squadra</th>
+            <th>G</th>
+            <th>V</th>
+            <th>N</th>
+            <th>P</th>
+            <th>GF</th>
+            <th>GS</th>
+            <th>DR</th>
+            <th class="pr-6">PT</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="before:content-['-'] before:block before:leading-[1px] before:text-transparent">
           <tr v-for="(row, idx) in standings" :key="row.team.id"
-            :class="{ 'bg-primary bg-opacity-10': idx === 0 && standings.length > 1 }">
-            <td class="font-black opacity-40">{{ idx + 1 }}</td>
-            <td>
-              <div class="font-black">{{ row.team.name }}</div>
-              <div class="text-xs opacity-40">{{ row.team.player1.name }} {{ row.team.player1.surname }} & {{ row.team.player2.name }} {{ row.team.player2.surname }}</div>
+            class="group/row transition-all duration-300 hover:scale-[1.01]">
+            <td class="pl-6 font-black opacity-20 group-hover/row:opacity-100 transition-opacity">
+              {{ String(idx + 1).padStart(2, '0') }}
             </td>
-            <td class="text-center">{{ row.played }}</td>
-            <td class="text-center">{{ row.won }}</td>
-            <td class="text-center">{{ row.drawn }}</td>
-            <td class="text-center">{{ row.lost }}</td>
-            <td class="text-center">{{ row.gf }}</td>
-            <td class="text-center">{{ row.ga }}</td>
-            <td class="text-center font-bold" :class="{ 'text-success': row.gd > 0, 'text-error': row.gd < 0 }">
+            <td class="py-4">
+              <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center font-black text-primary shadow-sm group-hover/row:shadow-primary/20 transition-all">
+                  {{ row.team.name.charAt(0) }}
+                </div>
+                <div>
+                  <div class="font-black text-lg tracking-tight group-hover/row:text-primary transition-colors line-clamp-1">
+                    {{ row.team.name }}
+                  </div>
+                  <div class="text-[10px] font-bold uppercase tracking-widest opacity-30 flex gap-2">
+                    <span>{{ row.team.player1.name }}</span>
+                    <span>&</span>
+                    <span>{{ row.team.player2.name }}</span>
+                  </div>
+                </div>
+              </div>
+            </td>
+            <td class="text-center font-bold opacity-60">{{ row.played }}</td>
+            <td class="text-center font-bold text-success/80">{{ row.won }}</td>
+            <td class="text-center font-bold opacity-40">{{ row.drawn }}</td>
+            <td class="text-center font-bold text-error/80">{{ row.lost }}</td>
+            <td class="text-center font-medium opacity-60">{{ row.gf }}</td>
+            <td class="text-center font-medium opacity-60">{{ row.ga }}</td>
+            <td class="text-center font-black" :class="row.gd >= 0 ? 'text-success' : 'text-error'">
               {{ row.gd > 0 ? '+' : '' }}{{ row.gd }}
             </td>
-            <td class="text-center font-black text-lg">{{ row.points }}</td>
+            <td class="pr-6 text-center">
+              <div class="bg-primary/10 group-hover/row:bg-primary text-primary group-hover/row:text-primary-content font-black text-xl py-2 px-4 rounded-xl transition-all shadow-sm">
+                {{ row.points }}
+              </div>
+            </td>
           </tr>
         </tbody>
       </table>

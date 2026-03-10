@@ -14,7 +14,7 @@ const themes = ['cupcake', 'dracula', 'emerald']
           </div>
           <div class="flex flex-col">
             <NuxtLink to="/" class="text-2xl font-black italic tracking-tighter leading-none bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent cursor-pointer">CALCETTO PUNTI</NuxtLink>
-            <span class="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em] ml-1">The Arena Management</span>
+            <span class="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em] ml-1">The Tournament Management</span>
           </div>
         </div>
 
@@ -25,8 +25,8 @@ const themes = ['cupcake', 'dracula', 'emerald']
           <NuxtLink to="/atleti" class="btn btn-ghost btn-sm rounded-xl font-black tracking-widest text-[11px] gap-2 px-6 hover:bg-base-100">
             <Icon name="lucide:users" /> ATLETI
           </NuxtLink>
-          <NuxtLink to="/arene" class="btn btn-ghost btn-sm rounded-xl font-black tracking-widest text-[11px] gap-2 px-6 hover:bg-base-100">
-            <Icon name="lucide:sword" /> ARENE
+          <NuxtLink to="/tornei" class="btn btn-ghost btn-sm rounded-xl font-black tracking-widest text-[11px] gap-2 px-6 hover:bg-base-100">
+            <Icon name="lucide:swords" /> TORNEI
           </NuxtLink>
         </nav>
 
