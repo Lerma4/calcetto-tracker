@@ -9,6 +9,19 @@ const editingPlayer = ref<Player | null>(null)
 const editForm = ref({ name: '', surname: '', role: 'indifferente', nickname: '' })
 const errorMsg = ref('')
 
+const searchName = ref('')
+const searchRole = ref('')
+
+const filteredPlayers = computed(() => {
+  if (!players.value) return []
+  return players.value.filter(p => {
+    const term = searchName.value.toLowerCase()
+    const matchesName = !term || p.name.toLowerCase().includes(term) || p.surname.toLowerCase().includes(term) || (p.nickname || '').toLowerCase().includes(term)
+    const matchesRole = !searchRole.value || p.role === searchRole.value
+    return matchesName && matchesRole
+  })
+})
+
 const handleAdd = async () => {
   if (!newPlayer.value.name || !newPlayer.value.surname) return
   isAdding.value = true
@@ -97,8 +110,20 @@ const handleToggle = async (id: number) => {
     <!-- Players Table -->
     <div class="glass-card rounded-[2rem] p-8 overflow-x-auto">
       <h2 class="text-lg font-black uppercase tracking-widest opacity-60 mb-6">
-        <Icon name="lucide:list" class="inline w-5 h-5 mr-2" />Roster ({{ players?.length || 0 }})
+        <Icon name="lucide:list" class="inline w-5 h-5 mr-2" />Roster ({{ filteredPlayers.length }})
       </h2>
+      <div class="flex flex-col sm:flex-row gap-3 mb-6">
+        <div class="relative flex-1">
+          <Icon name="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+          <input v-model="searchName" type="text" placeholder="Cerca per nome, cognome o nickname..." class="input input-bordered rounded-xl w-full pl-10" />
+        </div>
+        <select v-model="searchRole" class="select select-bordered rounded-xl">
+          <option value="">Tutti i ruoli</option>
+          <option value="attaccante">Attaccante</option>
+          <option value="portiere">Portiere</option>
+          <option value="indifferente">Indifferente</option>
+        </select>
+      </div>
       <table class="table table-zebra w-full">
         <thead>
           <tr class="text-xs font-black uppercase tracking-widest opacity-50">
@@ -111,7 +136,7 @@ const handleToggle = async (id: number) => {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="player in players" :key="player.id" :class="{ 'opacity-40': player.disabled }">
+          <tr v-for="player in filteredPlayers" :key="player.id" :class="{ 'opacity-40': player.disabled }">
             <td class="font-bold" :class="{ 'line-through': player.disabled }">{{ player.name }}</td>
             <td class="font-bold" :class="{ 'line-through': player.disabled }">{{ player.surname }}</td>
             <td>
@@ -144,8 +169,8 @@ const handleToggle = async (id: number) => {
               </div>
             </td>
           </tr>
-          <tr v-if="!players?.length">
-            <td colspan="6" class="text-center opacity-40 py-8 font-bold">Nessun atleta registrato</td>
+          <tr v-if="!filteredPlayers.length">
+            <td colspan="6" class="text-center opacity-40 py-8 font-bold">{{ players?.length ? 'Nessun risultato' : 'Nessun atleta registrato' }}</td>
           </tr>
         </tbody>
       </table>
