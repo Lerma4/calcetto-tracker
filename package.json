@@ -11,6 +11,8 @@
   },
   "dependencies": {
     "@nuxt/icon": "^2.2.1",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
     "better-sqlite3": "^12.6.2",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.3.1",

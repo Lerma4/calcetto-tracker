@@ -1,6 +1,8 @@
 <script setup lang="ts">
 const colorMode = useColorMode()
 const themes = ['cupcake', 'dracula', 'emerald']
+
+const { user, isLoggedIn, logout } = useAuth()
 </script>
 
 <template>
@@ -49,6 +51,21 @@ const themes = ['cupcake', 'dracula', 'emerald']
                 </button>
               </li>
             </ul>
+          </div>
+
+          <!-- User & Logout -->
+          <div v-if="isLoggedIn" class="flex items-center gap-3">
+            <div class="badge badge-ghost font-bold text-[10px] uppercase tracking-widest gap-2 py-3 px-4 rounded-xl">
+              <Icon name="lucide:user-circle" class="w-4 h-4" />
+              {{ user?.username }}
+            </div>
+            <button
+              @click="logout"
+              class="btn btn-ghost btn-sm rounded-xl text-error hover:bg-error hover:text-error-content transition-all"
+              title="Logout"
+            >
+              <Icon name="lucide:log-out" class="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>
