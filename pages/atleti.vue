@@ -70,15 +70,7 @@ const handleToggle = async (id: number) => {
 <template>
   <div class="space-y-10">
     <!-- Header -->
-    <div class="flex items-center gap-4">
-      <div class="p-3 bg-primary rounded-2xl text-primary-content shadow-lg">
-        <Icon name="lucide:users" class="w-7 h-7" />
-      </div>
-      <div>
-        <h1 class="text-4xl font-black italic tracking-tighter">GESTIONE ATLETI</h1>
-        <p class="text-xs font-bold opacity-40 uppercase tracking-[0.3em]">Roster completo della federazione</p>
-      </div>
-    </div>
+    <BasePageHeader title="Gestione Atleti" />
 
     <!-- Error Alert -->
     <div v-if="errorMsg" class="alert alert-error shadow-lg rounded-2xl">
@@ -87,10 +79,7 @@ const handleToggle = async (id: number) => {
     </div>
 
     <!-- Add Player Card -->
-    <div class="glass-card rounded-[2rem] p-8">
-      <h2 class="text-lg font-black uppercase tracking-widest opacity-60 mb-6">
-        <Icon name="lucide:user-plus" class="inline w-5 h-5 mr-2" />Nuovo Atleta
-      </h2>
+    <BaseSectionCard title="Nuovo Atleta" icon="lucide:user-plus">
       <form @submit.prevent="handleAdd" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <input v-model="newPlayer.name" type="text" placeholder="Nome" class="input input-bordered rounded-xl" required />
         <input v-model="newPlayer.surname" type="text" placeholder="Cognome" class="input input-bordered rounded-xl" required />
@@ -105,76 +94,75 @@ const handleToggle = async (id: number) => {
           AGGIUNGI
         </button>
       </form>
-    </div>
+    </BaseSectionCard>
 
     <!-- Players Table -->
-    <div class="glass-card rounded-[2rem] p-8 overflow-x-auto">
-      <h2 class="text-lg font-black uppercase tracking-widest opacity-60 mb-6">
-        <Icon name="lucide:list" class="inline w-5 h-5 mr-2" />Roster ({{ filteredPlayers.length }})
-      </h2>
-      <div class="flex flex-col sm:flex-row gap-3 mb-6">
-        <div class="relative flex-1">
-          <Icon name="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
-          <input v-model="searchName" type="text" placeholder="Cerca per nome, cognome o nickname..." class="input input-bordered rounded-xl w-full pl-10" />
+    <BaseSectionCard title="Roster" icon="lucide:list">
+      <template #default>
+        <div class="flex flex-col sm:flex-row gap-3 mb-6">
+          <div class="relative flex-1">
+            <Icon name="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+            <input v-model="searchName" type="text" placeholder="Cerca per nome, cognome o nickname..." class="input input-bordered rounded-xl w-full pl-10" />
+          </div>
+          <select v-model="searchRole" class="select select-bordered rounded-xl">
+            <option value="">Tutti i ruoli</option>
+            <option value="attaccante">Attaccante</option>
+            <option value="portiere">Portiere</option>
+            <option value="indifferente">Indifferente</option>
+          </select>
         </div>
-        <select v-model="searchRole" class="select select-bordered rounded-xl">
-          <option value="">Tutti i ruoli</option>
-          <option value="attaccante">Attaccante</option>
-          <option value="portiere">Portiere</option>
-          <option value="indifferente">Indifferente</option>
-        </select>
-      </div>
-      <table class="table table-zebra w-full">
-        <thead>
-          <tr class="text-xs font-black uppercase tracking-widest opacity-50">
-            <th>Nome</th>
-            <th>Cognome</th>
-            <th>Ruolo</th>
-            <th>Nickname</th>
-            <th>Stato</th>
-            <th class="text-right">Azioni</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="player in filteredPlayers" :key="player.id" :class="{ 'opacity-40': player.disabled }">
-            <td class="font-bold" :class="{ 'line-through': player.disabled }">{{ player.name }}</td>
-            <td class="font-bold" :class="{ 'line-through': player.disabled }">{{ player.surname }}</td>
-            <td>
-              <span class="badge badge-sm font-bold uppercase tracking-wider"
-                :class="{
-                  'badge-primary': player.role === 'attaccante',
-                  'badge-secondary': player.role === 'portiere',
-                  'badge-accent': player.role === 'indifferente'
-                }">
-                {{ player.role }}
-              </span>
-            </td>
-            <td class="opacity-60">{{ player.nickname || '—' }}</td>
-            <td>
-              <span v-if="player.disabled" class="badge badge-error badge-sm font-bold uppercase tracking-wider">DISABILITATO</span>
-              <span v-else class="badge badge-success badge-sm font-bold uppercase tracking-wider">ATTIVO</span>
-            </td>
-            <td class="text-right">
-              <div class="flex justify-end gap-1">
-                <button @click="openEdit(player)" class="btn btn-ghost btn-xs rounded-lg" title="Modifica">
-                  <Icon name="lucide:pencil" class="w-4 h-4" />
-                </button>
-                <button @click="handleToggle(player.id)" class="btn btn-ghost btn-xs rounded-lg" :title="player.disabled ? 'Abilita' : 'Disabilita'">
-                  <Icon v-if="player.disabled" name="lucide:check-circle" class="w-4 h-4 text-success" />
-                  <Icon v-else name="lucide:ban" class="w-4 h-4 text-warning" />
-                </button>
-                <button @click="handleDelete(player.id)" class="btn btn-ghost btn-xs rounded-lg text-error" title="Elimina">
-                  <Icon name="lucide:trash-2" class="w-4 h-4" />
-                </button>
-              </div>
-            </td>
-          </tr>
-          <tr v-if="!filteredPlayers.length">
-            <td colspan="6" class="text-center opacity-40 py-8 font-bold">{{ players?.length ? 'Nessun risultato' : 'Nessun atleta registrato' }}</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        <table class="table table-zebra w-full">
+          <thead>
+            <tr class="text-xs font-black uppercase tracking-widest opacity-50">
+              <th>Nome</th>
+              <th>Cognome</th>
+              <th>Ruolo</th>
+              <th>Nickname</th>
+              <th>Stato</th>
+              <th class="text-right">Azioni</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="player in filteredPlayers" :key="player.id" :class="{ 'opacity-40': player.disabled }">
+              <td class="font-bold" :class="{ 'line-through': player.disabled }">{{ player.name }}</td>
+              <td class="font-bold" :class="{ 'line-through': player.disabled }">{{ player.surname }}</td>
+              <td>
+                <span class="badge badge-sm font-bold uppercase tracking-wider"
+                  :class="{
+                    'badge-primary': player.role === 'attaccante',
+                    'badge-secondary': player.role === 'portiere',
+                    'badge-accent': player.role === 'indifferente'
+                  }">
+                  {{ player.role }}
+                </span>
+              </td>
+              <td class="opacity-60">{{ player.nickname || '—' }}</td>
+              <td>
+                <span v-if="player.disabled" class="badge badge-error badge-sm font-bold uppercase tracking-wider">DISABILITATO</span>
+                <span v-else class="badge badge-success badge-sm font-bold uppercase tracking-wider">ATTIVO</span>
+              </td>
+              <td class="text-right">
+                <div class="flex justify-end gap-1">
+                  <button @click="openEdit(player)" class="btn btn-ghost btn-xs rounded-lg" title="Modifica">
+                    <Icon name="lucide:pencil" class="w-4 h-4" />
+                  </button>
+                  <button @click="handleToggle(player.id)" class="btn btn-ghost btn-xs rounded-lg" :title="player.disabled ? 'Abilita' : 'Disabilita'">
+                    <Icon v-if="player.disabled" name="lucide:check-circle" class="w-4 h-4 text-success" />
+                    <Icon v-else name="lucide:ban" class="w-4 h-4 text-warning" />
+                  </button>
+                  <button @click="handleDelete(player.id)" class="btn btn-ghost btn-xs rounded-lg text-error" title="Elimina">
+                    <Icon name="lucide:trash-2" class="w-4 h-4" />
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr v-if="!filteredPlayers.length">
+              <td colspan="6" class="text-center opacity-40 py-8 font-bold">{{ players?.length ? 'Nessun risultato' : 'Nessun atleta registrato' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </template>
+    </BaseSectionCard>
 
     <!-- Edit Modal -->
     <dialog id="edit-modal" class="modal">

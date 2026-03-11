@@ -22,15 +22,32 @@ const handleAdd = async () => {
 <template>
   <div class="space-y-10">
     <!-- Header -->
-    <div class="flex items-center gap-4">
-        <NuxtLink to="/" class="btn btn-ghost btn-sm rounded-xl font-black text-[10px] opacity-40 hover:opacity-100 uppercase tracking-widest gap-2">
-          <Icon name="lucide:arrow-left" class="w-4 h-4" /> TORNEI
-        </NuxtLink>
-        <h1 class="text-6xl font-black italic tracking-tighter uppercase leading-none">Hall of Champions</h1>
-        <div class="h-2 w-32 bg-secondary rounded-full mt-4"></div>
-      </div>
+    <BasePageHeader title="Hall of Champions" />
 
-      <div class="card bg-base-100 rounded-[3rem] shadow-2xl border-2 border-base-200 overflow-hidden">
+    <!-- Add Competition Card -->
+    <BaseSectionCard title="Nuovo Torneo" icon="lucide:plus-circle">
+      <form @submit.prevent="handleAdd" class="grid grid-cols-1 md:grid-cols-[1fr_120px_auto] gap-4 items-end">
+        <div class="form-control w-full">
+          <label class="label">
+            <span class="label-text text-xs font-bold uppercase tracking-widest opacity-50">Nome torneo</span>
+          </label>
+          <input v-model="newComp.name" type="text" placeholder="Es. Serie A 2024" class="input input-bordered w-full rounded-xl focus:border-secondary transition-colors" required />
+        </div>
+        <div class="form-control w-full">
+          <label class="label">
+            <span class="label-text text-xs font-bold uppercase tracking-widest opacity-50">Punti vittoria</span>
+          </label>
+          <input v-model.number="newComp.winPoints" type="number" min="1" class="input input-bordered w-full rounded-xl focus:border-secondary transition-colors" required />
+        </div>
+        <button type="submit" class="btn btn-secondary rounded-xl font-black tracking-widest w-full md:w-auto h-12" :disabled="isAdding">
+          <span v-if="isAdding" class="loading loading-spinner loading-sm"></span>
+          CREA TORNEO
+        </button>
+      </form>
+    </BaseSectionCard>
+
+    <!-- Active Tournaments -->
+    <div class="card bg-base-100 rounded-[3rem] shadow-2xl border-2 border-base-200 overflow-hidden">
          <div class="p-10 border-b border-base-200 bg-base-100 flex items-center justify-between">
             <h2 class="text-3xl font-black uppercase tracking-tighter italic">I Tornei Attivi</h2>
             <div class="badge badge-lg bg-secondary/10 text-secondary border-none font-black text-xs px-6">SCANSIONE LIVE</div>
@@ -81,30 +98,5 @@ const handleAdd = async () => {
              </div>
          </div>
       </div>
-
-    <!-- Add Competition Card -->
-    <div class="glass-card rounded-[2rem] p-8">
-      <h2 class="text-lg font-black uppercase tracking-widest opacity-60 mb-6 flex items-center gap-2">
-        <Icon name="lucide:plus-circle" class="w-5 h-5" />Nuovo Torneo
-      </h2>
-      <form @submit.prevent="handleAdd" class="grid grid-cols-1 md:grid-cols-[1fr_120px_auto] gap-4 items-end">
-        <div class="form-control w-full">
-          <label class="label">
-            <span class="label-text text-xs font-bold uppercase tracking-widest opacity-50">Nome torneo</span>
-          </label>
-          <input v-model="newComp.name" type="text" placeholder="Es. Serie A 2024" class="input input-bordered w-full rounded-xl focus:border-secondary transition-colors" required />
-        </div>
-        <div class="form-control w-full">
-          <label class="label">
-            <span class="label-text text-xs font-bold uppercase tracking-widest opacity-50">Punti vittoria</span>
-          </label>
-          <input v-model.number="newComp.winPoints" type="number" min="1" class="input input-bordered w-full rounded-xl focus:border-secondary transition-colors" required />
-        </div>
-        <button type="submit" class="btn btn-secondary rounded-xl font-black tracking-widest w-full md:w-auto h-12" :disabled="isAdding">
-          <span v-if="isAdding" class="loading loading-spinner loading-sm"></span>
-          CREA TORNEO
-        </button>
-      </form>
-    </div>
   </div>
 </template>

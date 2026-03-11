@@ -229,6 +229,12 @@ const handleAddMatch = async () => {
 const editingMatchId = ref<number | null>(null)
 const editMatch = ref({ team1Id: 0, team2Id: 0 })
 
+// Standings mobile expand
+const expandedStandingId = ref<number | null>(null)
+const toggleStanding = (teamId: number) => {
+  expandedStandingId.value = expandedStandingId.value === teamId ? null : teamId
+}
+
 const handleDeleteMatch = async (matchId: number) => {
   if (!confirm('Eliminare questa partita?')) return
   errorMsg.value = ''
@@ -271,12 +277,12 @@ const handleSaveMatchTeams = async (matchId: number) => {
     <!-- Header -->
     <div class="flex items-center justify-between flex-wrap gap-4">
       <div class="flex items-center gap-4">
-        <NuxtLink to="/arene" class="btn btn-ghost btn-circle rounded-2xl">
+        <NuxtLink to="/tornei" class="btn btn-ghost btn-circle rounded-2xl">
           <Icon name="lucide:arrow-left" class="w-5 h-5" />
         </NuxtLink>
         <div>
           <h1 class="text-4xl font-black italic tracking-tighter">{{ competition?.name }}</h1>
-          <p class="text-xs font-bold opacity-40 uppercase tracking-[0.3em]">Dettaglio Arena</p>
+          <p class="text-xs font-bold opacity-40 uppercase tracking-[0.3em]">Dettaglio Torneo</p>
         </div>
       </div>
       <span class="badge badge-primary badge-lg font-black tracking-widest">{{ competition?.winPoints }} PV</span>
@@ -288,45 +294,114 @@ const handleSaveMatchTeams = async (matchId: number) => {
       <span class="font-bold">{{ errorMsg }}</span>
     </div>
 
-    <!-- Teams Section -->
-    <div class="glass-card rounded-[2rem] p-8">
-      <h2 class="text-lg font-black uppercase tracking-widest opacity-60 mb-6">
-        <Icon name="lucide:users" class="inline w-5 h-5 mr-2" />Squadre ({{ competition?.teams?.length || 0 }})
+    <!-- Classifica Section -->
+    <div v-if="hasCalendar" class="glass-card rounded-[2rem] p-6 md:p-8 shadow-2xl relative overflow-hidden group">
+      <div class="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
+      
+      <h2 class="text-lg md:text-xl font-black uppercase tracking-[0.2em] bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-4 md:mb-6 flex items-center gap-3">
+        <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+          <Icon name="lucide:trophy" class="w-4 h-4 md:w-5 md:h-5 text-primary" />
+        </div>
+        Classifica Generale
       </h2>
 
-      <!-- Add Team Form (only if no calendar yet) -->
-      <form v-if="!hasCalendar" @submit.prevent="handleAddTeam" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <input v-model="newTeam.name" type="text" placeholder="Nome squadra" class="input input-bordered rounded-xl" required />
-        <select v-model.number="newTeam.player1Id" class="select select-bordered rounded-xl" required>
-          <option :value="0" disabled>Giocatore 1</option>
-          <option v-for="p in availablePlayers" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
-        </select>
-        <select v-model.number="newTeam.player2Id" class="select select-bordered rounded-xl" required>
-          <option :value="0" disabled>Giocatore 2</option>
-          <option v-for="p in availablePlayers" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
-        </select>
-        <button type="submit" class="btn btn-primary rounded-xl font-black tracking-widest" :disabled="isAddingTeam">
-          <span v-if="isAddingTeam" class="loading loading-spinner loading-sm"></span>
-          AGGIUNGI
-        </button>
-      </form>
-
-      <!-- Teams List -->
-      <div class="space-y-2">
-        <div v-for="team in competition?.teams" :key="team.id"
-          class="flex items-center justify-between bg-base-200 rounded-xl p-4">
-          <div>
-            <span class="font-black text-lg">{{ team.name }}</span>
-            <span class="ml-3 text-sm opacity-50">{{ team.player1.name }} {{ team.player1.surname }} & {{ team.player2.name }} {{ team.player2.surname }}</span>
-          </div>
-          <button v-if="!hasCalendar" @click="handleDeleteTeam(team.id)" class="btn btn-ghost btn-sm text-error rounded-lg">
-            <Icon name="lucide:trash-2" class="w-4 h-4" />
-          </button>
-        </div>
-        <div v-if="!competition?.teams?.length" class="text-center opacity-40 py-4 font-bold">
-          Nessuna squadra inserita
-        </div>
-      </div>
+      <table class="table table-sm md:table-md w-full">
+        <thead>
+          <tr class="text-[9px] md:text-[10px] font-black uppercase tracking-wider text-center opacity-40 border-none">
+            <th class="text-left pl-3 md:pl-4">#</th>
+            <th class="text-left">Squadra</th>
+            <th class="hidden md:table-cell">G</th>
+            <th class="hidden md:table-cell">V</th>
+            <th class="hidden md:table-cell">N</th>
+            <th class="hidden md:table-cell">P</th>
+            <th class="hidden lg:table-cell">GF</th>
+            <th class="hidden lg:table-cell">GS</th>
+            <th class="hidden md:table-cell">DR</th>
+            <th class="pr-3 md:pr-4">PT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template v-for="(row, idx) in standings" :key="row.team.id">
+            <tr
+              class="group/row transition-all duration-300 hover:bg-base-200 md:cursor-default cursor-pointer"
+              @click="toggleStanding(row.team.id)">
+              <td class="pl-3 md:pl-4 font-black opacity-30 text-sm">
+                {{ idx + 1 }}
+              </td>
+              <td class="py-2 md:py-3">
+                <div class="flex items-center gap-2 md:gap-3">
+                  <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center font-black text-primary text-sm md:text-base shrink-0">
+                    {{ row.team.name.charAt(0) }}
+                  </div>
+                  <div class="min-w-0 flex-1">
+                    <div class="font-black text-sm md:text-base tracking-tight group-hover/row:text-primary transition-colors truncate">
+                      {{ row.team.name }}
+                    </div>
+                    <div class="text-[9px] md:text-[10px] font-bold uppercase tracking-wider opacity-30 truncate">
+                      {{ row.team.player1.name }} & {{ row.team.player2.name }}
+                    </div>
+                  </div>
+                  <Icon
+                    name="lucide:chevron-down"
+                    class="w-4 h-4 opacity-30 transition-transform duration-200 md:hidden shrink-0"
+                    :class="{ 'rotate-180': expandedStandingId === row.team.id }" />
+                </div>
+              </td>
+              <td class="hidden md:table-cell text-center font-bold opacity-60 text-sm">{{ row.played }}</td>
+              <td class="hidden md:table-cell text-center font-bold text-success/80 text-sm">{{ row.won }}</td>
+              <td class="hidden md:table-cell text-center font-bold opacity-40 text-sm">{{ row.drawn }}</td>
+              <td class="hidden md:table-cell text-center font-bold text-error/80 text-sm">{{ row.lost }}</td>
+              <td class="hidden lg:table-cell text-center font-medium opacity-60 text-sm">{{ row.gf }}</td>
+              <td class="hidden lg:table-cell text-center font-medium opacity-60 text-sm">{{ row.ga }}</td>
+              <td class="hidden md:table-cell text-center font-black text-sm" :class="row.gd >= 0 ? 'text-success' : 'text-error'">
+                {{ row.gd > 0 ? '+' : '' }}{{ row.gd }}
+              </td>
+              <td class="pr-3 md:pr-4 text-center">
+                <div class="bg-primary/10 group-hover/row:bg-primary text-primary group-hover/row:text-primary-content font-black text-base md:text-lg py-1 px-3 rounded-lg transition-all inline-block min-w-[2.5rem]">
+                  {{ row.points }}
+                </div>
+              </td>
+            </tr>
+            <!-- Mobile expanded detail row -->
+            <tr v-if="expandedStandingId === row.team.id" class="md:hidden">
+              <td :colspan="3" class="px-3 pb-3 pt-0">
+                <div class="grid grid-cols-4 gap-2 bg-base-200 rounded-xl p-3 text-center">
+                  <div>
+                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">G</div>
+                    <div class="font-bold text-sm">{{ row.played }}</div>
+                  </div>
+                  <div>
+                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">V</div>
+                    <div class="font-bold text-sm text-success">{{ row.won }}</div>
+                  </div>
+                  <div>
+                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">N</div>
+                    <div class="font-bold text-sm">{{ row.drawn }}</div>
+                  </div>
+                  <div>
+                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">P</div>
+                    <div class="font-bold text-sm text-error">{{ row.lost }}</div>
+                  </div>
+                  <div>
+                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">GF</div>
+                    <div class="font-bold text-sm">{{ row.gf }}</div>
+                  </div>
+                  <div>
+                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">GS</div>
+                    <div class="font-bold text-sm">{{ row.ga }}</div>
+                  </div>
+                  <div class="col-span-2">
+                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">Diff. Reti</div>
+                    <div class="font-black text-sm" :class="row.gd >= 0 ? 'text-success' : 'text-error'">
+                      {{ row.gd > 0 ? '+' : '' }}{{ row.gd }}
+                    </div>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
     </div>
 
     <!-- Calendar Section -->
@@ -464,71 +539,45 @@ const handleSaveMatchTeams = async (matchId: number) => {
       </div>
     </div>
 
-    <div v-if="hasCalendar" class="glass-card rounded-[2rem] p-8 overflow-x-auto shadow-2xl relative overflow-hidden group">
-      <div class="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
-      
-      <h2 class="text-xl font-black uppercase tracking-[0.2em] bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-8 flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-          <Icon name="lucide:trophy" class="w-5 h-5 text-primary" />
-        </div>
-        Classifica Generale
+    <!-- Teams Section -->
+    <div class="glass-card rounded-[2rem] p-8">
+      <h2 class="text-lg font-black uppercase tracking-widest opacity-60 mb-6">
+        <Icon name="lucide:users" class="inline w-5 h-5 mr-2" />Squadre ({{ competition?.teams?.length || 0 }})
       </h2>
 
-      <table class="table w-full border-separate border-spacing-y-2">
-        <thead>
-          <tr class="text-[10px] font-black uppercase tracking-[0.1em] text-center opacity-40 border-none">
-            <th class="text-left pl-6">Pos</th>
-            <th class="text-left w-full">Squadra</th>
-            <th>G</th>
-            <th>V</th>
-            <th>N</th>
-            <th>P</th>
-            <th>GF</th>
-            <th>GS</th>
-            <th>DR</th>
-            <th class="pr-6">PT</th>
-          </tr>
-        </thead>
-        <tbody class="before:content-['-'] before:block before:leading-[1px] before:text-transparent">
-          <tr v-for="(row, idx) in standings" :key="row.team.id"
-            class="group/row transition-all duration-300 hover:scale-[1.01]">
-            <td class="pl-6 font-black opacity-20 group-hover/row:opacity-100 transition-opacity">
-              {{ String(idx + 1).padStart(2, '0') }}
-            </td>
-            <td class="py-4">
-              <div class="flex items-center gap-4">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center font-black text-primary shadow-sm group-hover/row:shadow-primary/20 transition-all">
-                  {{ row.team.name.charAt(0) }}
-                </div>
-                <div>
-                  <div class="font-black text-lg tracking-tight group-hover/row:text-primary transition-colors line-clamp-1">
-                    {{ row.team.name }}
-                  </div>
-                  <div class="text-[10px] font-bold uppercase tracking-widest opacity-30 flex gap-2">
-                    <span>{{ row.team.player1.name }}</span>
-                    <span>&</span>
-                    <span>{{ row.team.player2.name }}</span>
-                  </div>
-                </div>
-              </div>
-            </td>
-            <td class="text-center font-bold opacity-60">{{ row.played }}</td>
-            <td class="text-center font-bold text-success/80">{{ row.won }}</td>
-            <td class="text-center font-bold opacity-40">{{ row.drawn }}</td>
-            <td class="text-center font-bold text-error/80">{{ row.lost }}</td>
-            <td class="text-center font-medium opacity-60">{{ row.gf }}</td>
-            <td class="text-center font-medium opacity-60">{{ row.ga }}</td>
-            <td class="text-center font-black" :class="row.gd >= 0 ? 'text-success' : 'text-error'">
-              {{ row.gd > 0 ? '+' : '' }}{{ row.gd }}
-            </td>
-            <td class="pr-6 text-center">
-              <div class="bg-primary/10 group-hover/row:bg-primary text-primary group-hover/row:text-primary-content font-black text-xl py-2 px-4 rounded-xl transition-all shadow-sm">
-                {{ row.points }}
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
+      <!-- Add Team Form (only if no calendar yet) -->
+      <form v-if="!hasCalendar" @submit.prevent="handleAddTeam" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <input v-model="newTeam.name" type="text" placeholder="Nome squadra" class="input input-bordered rounded-xl" required />
+        <select v-model.number="newTeam.player1Id" class="select select-bordered rounded-xl" required>
+          <option :value="0" disabled>Giocatore 1</option>
+          <option v-for="p in availablePlayers" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
+        </select>
+        <select v-model.number="newTeam.player2Id" class="select select-bordered rounded-xl" required>
+          <option :value="0" disabled>Giocatore 2</option>
+          <option v-for="p in availablePlayers" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
+        </select>
+        <button type="submit" class="btn btn-primary rounded-xl font-black tracking-widest" :disabled="isAddingTeam">
+          <span v-if="isAddingTeam" class="loading loading-spinner loading-sm"></span>
+          AGGIUNGI
+        </button>
+      </form>
+
+      <!-- Teams List -->
+      <div class="space-y-2">
+        <div v-for="team in competition?.teams" :key="team.id"
+          class="flex items-center justify-between bg-base-200 rounded-xl p-4">
+          <div>
+            <span class="font-black text-lg">{{ team.name }}</span>
+            <span class="ml-3 text-sm opacity-50">{{ team.player1.name }} {{ team.player1.surname }} & {{ team.player2.name }} {{ team.player2.surname }}</span>
+          </div>
+          <button v-if="!hasCalendar" @click="handleDeleteTeam(team.id)" class="btn btn-ghost btn-sm text-error rounded-lg">
+            <Icon name="lucide:trash-2" class="w-4 h-4" />
+          </button>
+        </div>
+        <div v-if="!competition?.teams?.length" class="text-center opacity-40 py-4 font-bold">
+          Nessuna squadra inserita
+        </div>
+      </div>
     </div>
   </div>
 </template>
