@@ -3,6 +3,8 @@ import type { Competition } from '~/types'
 
 const { data: competitions, refresh } = await useFetch<Competition[]>('/api/competitions')
 
+const { canCreate, canEdit } = usePermissions()
+
 const newComp = ref({ name: '', winPoints: 3 })
 const isAdding = ref(false)
 
@@ -25,7 +27,7 @@ const handleAdd = async () => {
     <BasePageHeader title="Hall of Champions" />
 
     <!-- Add Competition Card -->
-    <BaseSectionCard title="Nuovo Torneo" icon="lucide:plus-circle">
+    <BaseSectionCard v-if="canCreate" title="Nuovo Torneo" icon="lucide:plus-circle">
       <form @submit.prevent="handleAdd" class="grid grid-cols-1 md:grid-cols-[1fr_120px_auto] gap-4 items-end">
         <div class="form-control w-full">
           <label class="label">
@@ -86,7 +88,7 @@ const handleAdd = async () => {
                          </td>
                          <td class="text-right pr-10">
                             <NuxtLink :to="`/tornei/${comp.id}`" class="btn btn-secondary btn-lg rounded-3xl font-black text-xs tracking-widest px-8 shadow-xl hover:shadow-secondary transition-all transform active:scale-95 uppercase">
-                               Gestisci ⚡
+                               {{ canEdit ? 'Gestisci ⚡' : 'Visualizza' }}
                             </NuxtLink>
                          </td>
                       </tr>
