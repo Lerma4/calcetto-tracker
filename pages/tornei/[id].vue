@@ -129,6 +129,14 @@ const teamPlayers = (teamId: number) => {
   return `${team.player1.name} ${team.player1.surname} & ${team.player2.name} ${team.player2.surname}`
 }
 
+const teamSubtitle = (teamId: number) => {
+  const team = competition.value?.teams.find(t => t.id === teamId)
+  if (!team) return ''
+  const p1 = team.player1.nickname || `${team.player1.name} ${team.player1.surname}`
+  const p2 = team.player2.nickname || `${team.player2.name} ${team.player2.surname}`
+  return `${p1} & ${p2}`
+}
+
 // Standings
 const standings = computed(() => {
   const teams = competition.value?.teams || []
@@ -376,7 +384,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
                       {{ row.team.name }}
                     </div>
                     <div class="text-[9px] md:text-[10px] font-bold uppercase tracking-wider opacity-30 truncate">
-                      {{ row.team.player1.name }} & {{ row.team.player2.name }}
+                      {{ row.team.player1.nickname || row.team.player1.name }} & {{ row.team.player2.nickname || row.team.player2.name }}
                     </div>
                   </div>
                   <Icon
@@ -527,12 +535,18 @@ const handleSaveMatchTeams = async (matchId: number) => {
               class="flex items-center gap-3 bg-base-200 rounded-xl p-4 flex-wrap">
 
               <template v-if="editingMatchId !== match.id">
-                <span class="font-black flex-1 text-right min-w-[100px]" :title="teamPlayers(match.team1Id)">
-                  {{ teamName(match.team1Id) }}
-                </span>
-                <!-- Editable scores (logged in) -->
-                <template v-if="canEdit">
-                  <div class="flex items-center gap-2">
+                <!-- GIOCATA badge on the left, fixed width to avoid layout shift -->
+                <div class="w-20 shrink-0">
+                  <span v-if="match.state === 'played'" class="badge badge-success font-bold text-[10px] tracking-wider px-3 py-2.5 w-full">GIOCATA</span>
+                </div>
+
+                <!-- Team panels + scores (same layout for all users) -->
+                <div class="flex-1 text-right min-w-[100px]">
+                  <div class="font-black">{{ teamName(match.team1Id) }}</div>
+                  <div class="text-[10px] font-bold uppercase tracking-wider opacity-40">{{ teamSubtitle(match.team1Id) }}</div>
+                </div>
+                <div class="flex items-center gap-3 px-2">
+                  <template v-if="canEdit">
                     <input type="number" min="0"
                       class="input input-bordered input-sm rounded-lg w-16 text-center font-black"
                       :value="getScores(match.id, match.score1, match.score2).score1"
@@ -542,10 +556,18 @@ const handleSaveMatchTeams = async (matchId: number) => {
                       class="input input-bordered input-sm rounded-lg w-16 text-center font-black"
                       :value="getScores(match.id, match.score1, match.score2).score2"
                       @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score2: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
-                  </div>
-                  <span class="font-black flex-1 min-w-[100px]" :title="teamPlayers(match.team2Id)">
-                    {{ teamName(match.team2Id) }}
-                  </span>
+                  </template>
+                  <template v-else>
+                    <span class="font-black text-xl tabular-nums w-8 text-center">{{ match.score1 ?? '-' }}</span>
+                    <span class="font-black opacity-20 text-xs">VS</span>
+                    <span class="font-black text-xl tabular-nums w-8 text-center">{{ match.score2 ?? '-' }}</span>
+                  </template>
+                </div>
+                <div class="flex-1 min-w-[100px]">
+                  <div class="font-black">{{ teamName(match.team2Id) }}</div>
+                  <div class="text-[10px] font-bold uppercase tracking-wider opacity-40">{{ teamSubtitle(match.team2Id) }}</div>
+                </div>
+                <template v-if="canEdit">
                   <button @click="handleSaveResult(match.id)" class="btn btn-primary btn-sm rounded-lg font-bold">
                     <Icon name="lucide:save" class="w-4 h-4" />
                   </button>
@@ -556,18 +578,6 @@ const handleSaveMatchTeams = async (matchId: number) => {
                     <Icon name="lucide:trash-2" class="w-4 h-4" />
                   </button>
                 </template>
-                <!-- Read-only scores (guest) -->
-                <template v-else>
-                  <div class="flex items-center gap-2">
-                    <span class="font-black text-lg w-16 text-center">{{ match.score1 ?? '-' }}</span>
-                    <span class="font-black opacity-30">vs</span>
-                    <span class="font-black text-lg w-16 text-center">{{ match.score2 ?? '-' }}</span>
-                  </div>
-                  <span class="font-black flex-1 min-w-[100px]" :title="teamPlayers(match.team2Id)">
-                    {{ teamName(match.team2Id) }}
-                  </span>
-                </template>
-                <span v-if="match.state === 'played'" class="badge badge-success badge-xs font-bold">GIOCATA</span>
               </template>
 
               <template v-else>
@@ -620,7 +630,11 @@ const handleSaveMatchTeams = async (matchId: number) => {
           class="flex items-center justify-between bg-base-200 rounded-xl p-4">
           <div>
             <span class="font-black text-lg">{{ team.name }}</span>
-            <span class="ml-3 text-sm opacity-50">{{ team.player1.name }} {{ team.player1.surname }} & {{ team.player2.name }} {{ team.player2.surname }}</span>
+            <span class="ml-3 text-sm opacity-50">
+              {{ team.player1.name }} {{ team.player1.surname }}<template v-if="team.player1.nickname"> ({{ team.player1.nickname }})</template>
+              &
+              {{ team.player2.name }} {{ team.player2.surname }}<template v-if="team.player2.nickname"> ({{ team.player2.nickname }})</template>
+            </span>
           </div>
           <button v-if="!hasCalendar && canDelete" @click="handleDeleteTeam(team.id)" class="btn btn-ghost btn-sm text-error rounded-lg">
             <Icon name="lucide:trash-2" class="w-4 h-4" />
