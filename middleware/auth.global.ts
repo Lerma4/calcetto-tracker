@@ -1,18 +1,20 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  // Don't guard the login page itself
-  if (to.path === '/login') {
-    return;
-  }
+  // Define public routes that don't require authentication
+  const isPublic =
+    to.path === '/login' ||
+    to.path === '/tornei' ||
+    to.path.startsWith('/tornei/');
 
   const { user, fetchUser } = useAuth();
 
-  // If we don't have user data yet, try to fetch it
+  // Always attempt to fetch user if not already loaded
+  // This ensures users with valid cookies are recognized even on public routes
   if (!user.value) {
     await fetchUser();
   }
 
-  // If still not authenticated, redirect to login
-  if (!user.value) {
+  // Only redirect to login if route is NOT public AND user is not authenticated
+  if (!isPublic && !user.value) {
     return navigateTo('/login');
   }
 });
