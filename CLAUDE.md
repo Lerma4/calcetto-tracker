@@ -58,7 +58,7 @@ No test framework is configured.
 
 ## Release Workflow
 
-- When the user asks to commit and push, always propose a version bump and a GitHub release
+- When the user asks to commit and push, ALWAYS ask for explicit confirmation before bumping the version and creating a GitHub release — never do it automatically
 - Version lives in `package.json` (`version` field) and is displayed in the app footer via `runtimeConfig`
 - Use semver: patch for fixes, minor for features, major for breaking changes
 - Steps: bump `package.json` version → commit → push → `git tag vX.Y.Z` → `git push origin vX.Y.Z` → `gh release create`
