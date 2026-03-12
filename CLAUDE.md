@@ -36,7 +36,7 @@ No test framework is configured.
 - `server/api/competitions/[id]/matches/` — Manual match creation, team edit, delete with matchday compaction
 - `server/database/schema.ts` — Drizzle schema: `players`, `competitions`, `teams`, `matches`
 - `server/database/db.ts` — SQLite connection (WAL mode enabled)
-- Database file: `sqlite.db` at project root
+- Database file: `./data/sqlite.db` (volume-mounted in Docker at `/app/data`)
 
 **Types:**
 - `types/index.ts` — Shared TypeScript interfaces (Player, Competition, Team, Match)
@@ -55,3 +55,11 @@ No test framework is configured.
 - Design language: `glass-card rounded-[2rem]`, `font-black`, `tracking-widest`, `uppercase` for headings
 - Error messages: DaisyUI `alert alert-error` with auto-dismiss via `setTimeout`
 - Standings sorting: points > goal difference > goals scored
+
+## Release Workflow
+
+- When the user asks to commit and push, always propose a version bump and a GitHub release
+- Version lives in `package.json` (`version` field) and is displayed in the app footer via `runtimeConfig`
+- Use semver: patch for fixes, minor for features, major for breaking changes
+- Steps: bump `package.json` version → commit → push → `git tag vX.Y.Z` → `git push origin vX.Y.Z` → `gh release create`
+- The Dokploy deploy is triggered by tag, so the tag must match the version in `package.json`
