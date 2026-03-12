@@ -1,12 +1,16 @@
 <script setup lang="ts">
 definePageMeta({ layout: false })
 
+const { login, isLoggedIn } = useAuth()
+
+if (isLoggedIn.value) {
+  navigateTo('/')
+}
+
 const username = ref('')
 const password = ref('')
 const error = ref('')
 const loading = ref(false)
-
-const { login } = useAuth()
 
 const handleLogin = async () => {
   error.value = ''

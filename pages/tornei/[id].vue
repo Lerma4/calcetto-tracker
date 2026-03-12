@@ -10,6 +10,13 @@ const { isLoggedIn } = useAuth()
 const { data: competition, refresh } = await useFetch<CompetitionDetail>(`/api/competitions/${compId}`)
 const { data: allPlayers } = isLoggedIn.value ? await useFetch<Player[]>('/api/players') : { data: ref(null) }
 
+const isRefreshing = ref(false)
+const handleRefresh = async () => {
+  isRefreshing.value = true
+  await refresh()
+  isRefreshing.value = false
+}
+
 const activePlayers = computed(() => allPlayers.value?.filter(p => !p.disabled) || [])
 
 const assignedPlayerIds = computed(() => {
@@ -288,7 +295,12 @@ const handleSaveMatchTeams = async (matchId: number) => {
           <p class="text-xs font-bold opacity-40 uppercase tracking-[0.3em]">Dettaglio Torneo</p>
         </div>
       </div>
-      <span class="badge badge-primary badge-lg font-black tracking-widest">{{ competition?.winPoints }} PV</span>
+      <div class="flex items-center gap-3">
+        <button @click="handleRefresh" class="btn btn-ghost btn-circle rounded-2xl" :disabled="isRefreshing" title="Aggiorna dati">
+          <Icon name="lucide:refresh-cw" class="w-5 h-5 transition-transform" :class="{ 'animate-spin': isRefreshing }" />
+        </button>
+        <span class="badge badge-primary badge-lg font-black tracking-widest">{{ competition?.winPoints }} PV</span>
+      </div>
     </div>
 
     <!-- Error Alert -->
@@ -297,6 +309,29 @@ const handleSaveMatchTeams = async (matchId: number) => {
       <span class="font-bold">{{ errorMsg }}</span>
     </div>
 
+    <!-- Skeleton Loading State -->
+    <template v-if="isRefreshing">
+      <div class="glass-card rounded-[2rem] p-6 md:p-8 space-y-4">
+        <div class="skeleton h-6 w-48 rounded-lg"></div>
+        <div class="skeleton h-10 w-full rounded-lg"></div>
+        <div class="skeleton h-10 w-full rounded-lg"></div>
+        <div class="skeleton h-10 w-full rounded-lg"></div>
+        <div class="skeleton h-10 w-full rounded-lg"></div>
+      </div>
+      <div class="glass-card rounded-[2rem] p-8 space-y-4">
+        <div class="skeleton h-6 w-36 rounded-lg"></div>
+        <div class="skeleton h-12 w-full rounded-lg"></div>
+        <div class="skeleton h-12 w-full rounded-lg"></div>
+        <div class="skeleton h-12 w-full rounded-lg"></div>
+      </div>
+      <div class="glass-card rounded-[2rem] p-8 space-y-4">
+        <div class="skeleton h-6 w-32 rounded-lg"></div>
+        <div class="skeleton h-14 w-full rounded-lg"></div>
+        <div class="skeleton h-14 w-full rounded-lg"></div>
+      </div>
+    </template>
+
+    <template v-else>
     <!-- Classifica Section -->
     <div v-if="hasCalendar" class="glass-card rounded-[2rem] p-6 md:p-8 shadow-2xl relative overflow-hidden group">
       <div class="absolute top-0 right-0 p-12 -mr-12 -mt-12 bg-primary/10 rounded-full blur-3xl group-hover:bg-primary/20 transition-all duration-700"></div>
@@ -596,5 +631,6 @@ const handleSaveMatchTeams = async (matchId: number) => {
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
