@@ -15,12 +15,12 @@ const { user, isLoggedIn, logout } = useAuth()
              <Icon name="lucide:trophy" class="w-7 h-7" />
           </div>
           <div class="flex flex-col">
-            <NuxtLink to="/" class="text-2xl font-black italic tracking-tighter leading-none bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent cursor-pointer">CALCETTO PUNTI</NuxtLink>
+            <NuxtLink :to="isLoggedIn ? '/' : '/tornei'" class="text-2xl font-black italic tracking-tighter leading-none bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent cursor-pointer">CALCETTO PUNTI</NuxtLink>
             <span class="text-[10px] font-bold opacity-40 uppercase tracking-[0.2em] ml-1">The Tournament Management</span>
           </div>
         </div>
 
-        <nav class="hidden lg:flex items-center gap-2 bg-base-200 bg-opacity-50 p-1.5 rounded-2xl border border-base-content border-opacity-5">
+        <nav v-if="isLoggedIn" class="hidden lg:flex items-center gap-2 bg-base-200 bg-opacity-50 p-1.5 rounded-2xl border border-base-content border-opacity-5">
           <NuxtLink to="/" class="btn btn-ghost btn-sm rounded-xl font-black tracking-widest text-[11px] gap-2 px-6 hover:bg-base-100">
             <Icon name="lucide:layout-dashboard" /> DASHBOARD
           </NuxtLink>
@@ -67,6 +67,10 @@ const { user, isLoggedIn, logout } = useAuth()
               <Icon name="lucide:log-out" class="w-4 h-4" />
             </button>
           </div>
+          <!-- Guest login button -->
+          <NuxtLink v-else to="/login" class="btn btn-ghost btn-sm rounded-xl font-black tracking-widest text-[11px] gap-2 px-6 hover:bg-base-100">
+            <Icon name="lucide:log-in" class="w-4 h-4" /> ACCEDI
+          </NuxtLink>
         </div>
       </div>
     </header>
