@@ -80,7 +80,7 @@ const { user, isLoggedIn, logout } = useAuth()
     </main>
     
     <footer class="p-10 text-center opacity-30 text-[10px] font-bold uppercase tracking-[0.5em]">
-       Calcetto Punti © 2024 • Engineered for Champions
+       Calcetto Punti © 2026 • Engineered for Champions
     </footer>
   </div>
 </template>
