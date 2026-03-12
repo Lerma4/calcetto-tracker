@@ -40,6 +40,25 @@ const handleLogin = async () => {
         </p>
       </div>
 
+      <!-- Guest Access Card -->
+      <div class="card bg-base-100 shadow-md border border-base-content border-opacity-5 mb-4">
+        <div class="card-body p-6 flex flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <Icon name="lucide:eye" class="w-5 h-5 opacity-40 shrink-0" />
+            <p class="text-xs font-bold uppercase tracking-widest opacity-50">
+              Consulta i tornei senza effettuare l'accesso
+            </p>
+          </div>
+          <NuxtLink
+            to="/tornei"
+            class="btn btn-outline btn-sm rounded-xl font-black tracking-widest text-xs shrink-0"
+          >
+            <Icon name="lucide:trophy" class="w-4 h-4 mr-1" />
+            VAI AI TORNEI
+          </NuxtLink>
+        </div>
+      </div>
+
       <!-- Login Card -->
       <div class="card bg-base-100 shadow-2xl border border-base-content border-opacity-5">
         <div class="card-body p-8 space-y-6">
