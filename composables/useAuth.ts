@@ -1,11 +1,13 @@
 interface AuthUser {
   id: number;
   username: string;
+  mustChangePassword?: boolean;
 }
 
 export const useAuth = () => {
   const user = useState<AuthUser | null>('auth-user', () => null);
   const isLoggedIn = computed(() => !!user.value);
+  const mustChangePassword = computed(() => !!user.value?.mustChangePassword);
 
   const fetchUser = async () => {
     try {
@@ -34,6 +36,7 @@ export const useAuth = () => {
   return {
     user: readonly(user),
     isLoggedIn,
+    mustChangePassword,
     fetchUser,
     login,
     logout,

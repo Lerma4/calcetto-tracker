@@ -16,8 +16,8 @@ const handleLogin = async () => {
   error.value = ''
   loading.value = true
   try {
-    await login(username.value, password.value)
-    navigateTo('/')
+    const data = await login(username.value, password.value)
+    navigateTo(data.mustChangePassword ? '/change-password' : '/')
   } catch (e: any) {
     error.value = e.data?.message || e.statusMessage || 'Credenziali non valide'
   } finally {

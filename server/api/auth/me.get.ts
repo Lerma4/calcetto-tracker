@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const user = db
-    .select({ id: users.id, username: users.username })
+    .select({ id: users.id, username: users.username, mustChangePassword: users.mustChangePassword })
     .from(users)
     .where(eq(users.id, session.userId))
     .get();
@@ -29,5 +29,5 @@ export default defineEventHandler(async (event) => {
     throw createError({ statusCode: 401, statusMessage: 'Utente non trovato' });
   }
 
-  return user;
+  return { ...user, mustChangePassword: !!user.mustChangePassword };
 });

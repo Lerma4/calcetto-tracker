@@ -21,6 +21,7 @@ export default defineEventHandler(async (event) => {
     db.insert(users).values({
       username: 'admin',
       password: hashedPassword,
+      mustChangePassword: 1,
     }).run();
   }
 
@@ -62,5 +63,5 @@ export default defineEventHandler(async (event) => {
     sameSite: 'lax',
   });
 
-  return { id: user.id, username: user.username };
+  return { id: user.id, username: user.username, mustChangePassword: !!user.mustChangePassword };
 });

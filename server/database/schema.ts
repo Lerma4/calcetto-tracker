@@ -40,6 +40,7 @@ export const users = sqliteTable('users', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   username: text('username').notNull().unique(),
   password: text('password').notNull(),
+  mustChangePassword: integer('must_change_password').default(0).notNull(),
 });
 
 export const sessions = sqliteTable('sessions', {
