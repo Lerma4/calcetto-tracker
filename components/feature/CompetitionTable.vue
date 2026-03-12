@@ -8,9 +8,9 @@ defineProps<{
 
 <template>
   <div class="card bg-base-100 rounded-[3rem] shadow-2xl border-2 border-base-200 overflow-hidden">
-     <div class="p-10 pb-6 flex items-end justify-between border-b border-base-200 bg-base-100 bg-opacity-50">
+     <div class="p-5 sm:p-8 md:p-10 pb-6 flex items-end justify-between border-b border-base-200 bg-base-100 bg-opacity-50">
        <div>
-          <h2 class="text-4xl font-black font-heading tracking-tighter uppercase leading-none">Hall of Arenas</h2>
+          <h2 class="text-2xl sm:text-3xl md:text-4xl font-black font-heading tracking-tighter uppercase leading-none">Hall of Arenas</h2>
           <p class="text-[10px] font-black opacity-30 uppercase tracking-[0.4em] mt-3">Sincronizzazione Tornei Real-Time</p>
        </div>
        <div class="badge badge-lg bg-secondary/10 text-secondary border-none font-black text-xs px-4">{{ competitions?.length }} TOTALI</div>

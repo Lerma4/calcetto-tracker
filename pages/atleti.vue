@@ -111,13 +111,14 @@ const handleToggle = async (id: number) => {
             <option value="indifferente">Indifferente</option>
           </select>
         </div>
+        <div class="overflow-x-auto -mx-4 sm:mx-0">
         <table class="table table-zebra w-full">
           <thead>
             <tr class="text-xs font-black uppercase tracking-widest opacity-50">
               <th>Nome</th>
               <th>Cognome</th>
               <th>Ruolo</th>
-              <th>Nickname</th>
+              <th class="hidden sm:table-cell">Nickname</th>
               <th>Stato</th>
               <th class="text-right">Azioni</th>
             </tr>
@@ -136,7 +137,7 @@ const handleToggle = async (id: number) => {
                   {{ player.role }}
                 </span>
               </td>
-              <td class="opacity-60">{{ player.nickname || '—' }}</td>
+              <td class="opacity-60 hidden sm:table-cell">{{ player.nickname || '—' }}</td>
               <td>
                 <span v-if="player.disabled" class="badge badge-error badge-sm font-bold uppercase tracking-wider">DISABILITATO</span>
                 <span v-else class="badge badge-success badge-sm font-bold uppercase tracking-wider">ATTIVO</span>
@@ -161,6 +162,7 @@ const handleToggle = async (id: number) => {
             </tr>
           </tbody>
         </table>
+        </div>
       </template>
     </BaseSectionCard>
 

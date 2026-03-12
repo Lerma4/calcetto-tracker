@@ -293,21 +293,19 @@ const handleSaveMatchTeams = async (matchId: number) => {
 <template>
   <div class="space-y-10">
     <!-- Header -->
-    <div class="flex items-center justify-between flex-wrap gap-4">
-      <div class="flex items-center gap-4">
-        <NuxtLink to="/tornei" class="btn btn-ghost btn-circle rounded-2xl">
-          <Icon name="lucide:arrow-left" class="w-5 h-5" />
-        </NuxtLink>
-        <div>
-          <h1 class="text-4xl font-black italic tracking-tighter">{{ competition?.name }}</h1>
-          <p class="text-xs font-bold opacity-40 uppercase tracking-[0.3em]">Dettaglio Torneo</p>
-        </div>
+    <div class="flex items-center gap-3 flex-wrap">
+      <NuxtLink to="/tornei" class="btn btn-ghost btn-circle btn-sm sm:btn-md rounded-2xl shrink-0">
+        <Icon name="lucide:arrow-left" class="w-5 h-5" />
+      </NuxtLink>
+      <div class="flex-1 min-w-0">
+        <h1 class="text-2xl sm:text-3xl md:text-4xl font-black italic tracking-tighter truncate">{{ competition?.name }}</h1>
+        <p class="text-[10px] sm:text-xs font-bold opacity-40 uppercase tracking-[0.3em]">Dettaglio Torneo</p>
       </div>
-      <div class="flex items-center gap-3">
-        <button @click="handleRefresh" class="btn btn-ghost btn-circle rounded-2xl" :disabled="isRefreshing" title="Aggiorna dati">
-          <Icon name="lucide:refresh-cw" class="w-5 h-5 transition-transform" :class="{ 'animate-spin': isRefreshing }" />
+      <div class="flex items-center gap-2 shrink-0">
+        <button @click="handleRefresh" class="btn btn-ghost btn-circle btn-sm sm:btn-md rounded-2xl" :disabled="isRefreshing" title="Aggiorna dati">
+          <Icon name="lucide:refresh-cw" class="w-4 h-4 sm:w-5 sm:h-5 transition-transform" :class="{ 'animate-spin': isRefreshing }" />
         </button>
-        <span class="badge badge-primary badge-lg font-black tracking-widest">{{ competition?.winPoints }} PV</span>
+        <span class="badge badge-primary badge-sm sm:badge-lg font-black tracking-widest">{{ competition?.winPoints }} PV</span>
       </div>
     </div>
 
@@ -319,20 +317,20 @@ const handleSaveMatchTeams = async (matchId: number) => {
 
     <!-- Skeleton Loading State -->
     <template v-if="isRefreshing">
-      <div class="glass-card rounded-[2rem] p-6 md:p-8 space-y-4">
+      <div class="glass-card rounded-[2rem] p-4 sm:p-6 md:p-8 space-y-4">
         <div class="skeleton h-6 w-48 rounded-lg"></div>
         <div class="skeleton h-10 w-full rounded-lg"></div>
         <div class="skeleton h-10 w-full rounded-lg"></div>
         <div class="skeleton h-10 w-full rounded-lg"></div>
         <div class="skeleton h-10 w-full rounded-lg"></div>
       </div>
-      <div class="glass-card rounded-[2rem] p-8 space-y-4">
+      <div class="glass-card rounded-[2rem] p-4 sm:p-6 md:p-8 space-y-4">
         <div class="skeleton h-6 w-36 rounded-lg"></div>
         <div class="skeleton h-12 w-full rounded-lg"></div>
         <div class="skeleton h-12 w-full rounded-lg"></div>
         <div class="skeleton h-12 w-full rounded-lg"></div>
       </div>
-      <div class="glass-card rounded-[2rem] p-8 space-y-4">
+      <div class="glass-card rounded-[2rem] p-4 sm:p-6 md:p-8 space-y-4">
         <div class="skeleton h-6 w-32 rounded-lg"></div>
         <div class="skeleton h-14 w-full rounded-lg"></div>
         <div class="skeleton h-14 w-full rounded-lg"></div>
@@ -451,8 +449,8 @@ const handleSaveMatchTeams = async (matchId: number) => {
     </div>
 
     <!-- Calendar Section -->
-    <div class="glass-card rounded-[2rem] p-8">
-      <h2 class="text-lg font-black uppercase tracking-widest opacity-60 mb-6">
+    <div class="glass-card rounded-[2rem] p-4 sm:p-6 md:p-8">
+      <h2 class="text-base sm:text-lg font-black uppercase tracking-widest opacity-60 mb-4 sm:mb-6">
         <Icon name="lucide:calendar" class="inline w-5 h-5 mr-2" />Calendario
       </h2>
 
@@ -532,68 +530,83 @@ const handleSaveMatchTeams = async (matchId: number) => {
           <h3 class="text-sm font-black uppercase tracking-[0.3em] opacity-40 mb-3">Giornata {{ day }}</h3>
           <div class="space-y-2">
             <div v-for="match in dayMatches" :key="match.id"
-              class="flex items-center gap-3 bg-base-200 rounded-xl p-4 flex-wrap">
+              class="relative bg-base-200 rounded-xl p-3 sm:p-4">
 
               <template v-if="editingMatchId !== match.id">
-                <!-- GIOCATA badge on the left, fixed width to avoid layout shift -->
-                <div class="w-20 shrink-0">
-                  <span v-if="match.state === 'played'" class="badge badge-success font-bold text-[10px] tracking-wider px-3 py-2.5 w-full">GIOCATA</span>
+                <!-- Mobile: played indicator (top-right football) -->
+                <div v-if="match.state === 'played'" class="absolute -top-1.5 -right-1.5 sm:hidden">
+                  <span class="text-base drop-shadow-md">⚽</span>
                 </div>
 
-                <!-- Team panels + scores (same layout for all users) -->
-                <div class="flex-1 text-right min-w-[100px]">
-                  <div class="font-black">{{ teamName(match.team1Id) }}</div>
-                  <div class="text-[10px] font-bold uppercase tracking-wider opacity-40">{{ teamSubtitle(match.team1Id) }}</div>
+                <div class="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                  <!-- Desktop: GIOCATA badge -->
+                  <div class="hidden sm:block w-20 shrink-0">
+                    <span v-if="match.state === 'played'" class="badge badge-success font-bold text-[10px] tracking-wider px-3 py-2.5 w-full">GIOCATA</span>
+                  </div>
+
+                  <!-- Teams + scores row -->
+                  <div class="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                    <div class="flex-1 text-right min-w-0">
+                      <div class="font-black text-sm sm:text-base truncate">{{ teamName(match.team1Id) }}</div>
+                      <div class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider opacity-40 truncate">{{ teamSubtitle(match.team1Id) }}</div>
+                    </div>
+                    <div class="flex items-center gap-1 sm:gap-3 px-1 sm:px-2 shrink-0">
+                      <template v-if="canEdit">
+                        <input type="number" min="0"
+                          class="input input-bordered input-sm rounded-lg w-12 sm:w-16 text-center font-black"
+                          :value="getScores(match.id, match.score1, match.score2).score1"
+                          @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score1: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
+                        <span class="font-black opacity-30 text-xs">vs</span>
+                        <input type="number" min="0"
+                          class="input input-bordered input-sm rounded-lg w-12 sm:w-16 text-center font-black"
+                          :value="getScores(match.id, match.score1, match.score2).score2"
+                          @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score2: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
+                      </template>
+                      <template v-else>
+                        <span class="font-black text-lg sm:text-xl tabular-nums w-6 sm:w-8 text-center">{{ match.score1 ?? '-' }}</span>
+                        <span class="font-black opacity-20 text-[10px] sm:text-xs">VS</span>
+                        <span class="font-black text-lg sm:text-xl tabular-nums w-6 sm:w-8 text-center">{{ match.score2 ?? '-' }}</span>
+                      </template>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                      <div class="font-black text-sm sm:text-base truncate">{{ teamName(match.team2Id) }}</div>
+                      <div class="text-[9px] sm:text-[10px] font-bold uppercase tracking-wider opacity-40 truncate">{{ teamSubtitle(match.team2Id) }}</div>
+                    </div>
+                  </div>
+
+                  <!-- Action buttons (admin only) -->
+                  <div v-if="canEdit" class="flex items-center gap-1 justify-end shrink-0">
+                    <button @click="handleSaveResult(match.id)" class="btn btn-primary btn-sm btn-square rounded-lg font-bold">
+                      <Icon name="lucide:save" class="w-4 h-4" />
+                    </button>
+                    <button @click="startEditMatch(match)" class="btn btn-ghost btn-sm btn-square rounded-lg">
+                      <Icon name="lucide:pencil" class="w-4 h-4" />
+                    </button>
+                    <button @click="handleDeleteMatch(match.id)" class="btn btn-ghost btn-sm btn-square text-error rounded-lg">
+                      <Icon name="lucide:trash-2" class="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-                <div class="flex items-center gap-3 px-2">
-                  <template v-if="canEdit">
-                    <input type="number" min="0"
-                      class="input input-bordered input-sm rounded-lg w-16 text-center font-black"
-                      :value="getScores(match.id, match.score1, match.score2).score1"
-                      @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score1: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
-                    <span class="font-black opacity-30">vs</span>
-                    <input type="number" min="0"
-                      class="input input-bordered input-sm rounded-lg w-16 text-center font-black"
-                      :value="getScores(match.id, match.score1, match.score2).score2"
-                      @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score2: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
-                  </template>
-                  <template v-else>
-                    <span class="font-black text-xl tabular-nums w-8 text-center">{{ match.score1 ?? '-' }}</span>
-                    <span class="font-black opacity-20 text-xs">VS</span>
-                    <span class="font-black text-xl tabular-nums w-8 text-center">{{ match.score2 ?? '-' }}</span>
-                  </template>
-                </div>
-                <div class="flex-1 min-w-[100px]">
-                  <div class="font-black">{{ teamName(match.team2Id) }}</div>
-                  <div class="text-[10px] font-bold uppercase tracking-wider opacity-40">{{ teamSubtitle(match.team2Id) }}</div>
-                </div>
-                <template v-if="canEdit">
-                  <button @click="handleSaveResult(match.id)" class="btn btn-primary btn-sm rounded-lg font-bold">
-                    <Icon name="lucide:save" class="w-4 h-4" />
-                  </button>
-                  <button @click="startEditMatch(match)" class="btn btn-ghost btn-sm rounded-lg">
-                    <Icon name="lucide:pencil" class="w-4 h-4" />
-                  </button>
-                  <button @click="handleDeleteMatch(match.id)" class="btn btn-ghost btn-sm text-error rounded-lg">
-                    <Icon name="lucide:trash-2" class="w-4 h-4" />
-                  </button>
-                </template>
               </template>
 
               <template v-else>
-                <select v-model.number="editMatch.team1Id" class="select select-bordered select-sm rounded-lg flex-1">
-                  <option v-for="t in competition?.teams" :key="t.id" :value="t.id">{{ t.name }}</option>
-                </select>
-                <span class="font-black opacity-30">vs</span>
-                <select v-model.number="editMatch.team2Id" class="select select-bordered select-sm rounded-lg flex-1">
-                  <option v-for="t in competition?.teams" :key="t.id" :value="t.id">{{ t.name }}</option>
-                </select>
-                <button @click="handleSaveMatchTeams(match.id)" class="btn btn-success btn-sm rounded-lg font-bold">
-                  <Icon name="lucide:check" class="w-4 h-4" />
-                </button>
-                <button @click="cancelEditMatch" class="btn btn-ghost btn-sm rounded-lg">
-                  <Icon name="lucide:x" class="w-4 h-4" />
-                </button>
+                <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+                  <select v-model.number="editMatch.team1Id" class="select select-bordered select-sm rounded-lg flex-1">
+                    <option v-for="t in competition?.teams" :key="t.id" :value="t.id">{{ t.name }}</option>
+                  </select>
+                  <span class="font-black opacity-30 text-center">vs</span>
+                  <select v-model.number="editMatch.team2Id" class="select select-bordered select-sm rounded-lg flex-1">
+                    <option v-for="t in competition?.teams" :key="t.id" :value="t.id">{{ t.name }}</option>
+                  </select>
+                  <div class="flex gap-2 justify-end">
+                    <button @click="handleSaveMatchTeams(match.id)" class="btn btn-success btn-sm rounded-lg font-bold">
+                      <Icon name="lucide:check" class="w-4 h-4" />
+                    </button>
+                    <button @click="cancelEditMatch" class="btn btn-ghost btn-sm rounded-lg">
+                      <Icon name="lucide:x" class="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               </template>
             </div>
           </div>
@@ -602,8 +615,8 @@ const handleSaveMatchTeams = async (matchId: number) => {
     </div>
 
     <!-- Teams Section -->
-    <div class="glass-card rounded-[2rem] p-8">
-      <h2 class="text-lg font-black uppercase tracking-widest opacity-60 mb-6">
+    <div class="glass-card rounded-[2rem] p-4 sm:p-6 md:p-8">
+      <h2 class="text-base sm:text-lg font-black uppercase tracking-widest opacity-60 mb-4 sm:mb-6">
         <Icon name="lucide:users" class="inline w-5 h-5 mr-2" />Squadre ({{ competition?.teams?.length || 0 }})
       </h2>
 
@@ -627,16 +640,16 @@ const handleSaveMatchTeams = async (matchId: number) => {
       <!-- Teams List -->
       <div class="space-y-2">
         <div v-for="team in competition?.teams" :key="team.id"
-          class="flex items-center justify-between bg-base-200 rounded-xl p-4">
-          <div>
-            <span class="font-black text-lg">{{ team.name }}</span>
-            <span class="ml-3 text-sm opacity-50">
+          class="flex items-center justify-between gap-2 bg-base-200 rounded-xl p-3 sm:p-4">
+          <div class="min-w-0">
+            <div class="font-black text-base sm:text-lg truncate">{{ team.name }}</div>
+            <div class="text-xs sm:text-sm opacity-50 truncate">
               {{ team.player1.name }} {{ team.player1.surname }}<template v-if="team.player1.nickname"> ({{ team.player1.nickname }})</template>
-              &
+              &amp;
               {{ team.player2.name }} {{ team.player2.surname }}<template v-if="team.player2.nickname"> ({{ team.player2.nickname }})</template>
-            </span>
+            </div>
           </div>
-          <button v-if="!hasCalendar && canDelete" @click="handleDeleteTeam(team.id)" class="btn btn-ghost btn-sm text-error rounded-lg">
+          <button v-if="!hasCalendar && canDelete" @click="handleDeleteTeam(team.id)" class="btn btn-ghost btn-sm btn-square text-error rounded-lg shrink-0">
             <Icon name="lucide:trash-2" class="w-4 h-4" />
           </button>
         </div>
