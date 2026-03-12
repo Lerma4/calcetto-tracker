@@ -18,6 +18,8 @@ COPY --from=build /app/package.json package.json
 COPY --from=build /app/drizzle.config.ts drizzle.config.ts
 COPY --from=build /app/server/database/schema.ts server/database/schema.ts
 
+RUN mkdir -p data
+
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000

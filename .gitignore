@@ -27,6 +27,7 @@ logs
 sqlite.db
 sqlite.db-shm
 sqlite.db-wal
+data/
 
 # Test artifacts
 test-screenshots/
