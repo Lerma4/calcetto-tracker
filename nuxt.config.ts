@@ -6,7 +6,7 @@ export default defineNuxtConfig({
   modules: ['@nuxtjs/tailwindcss', '@nuxt/icon', '@nuxtjs/color-mode'],
   css: ['~/assets/css/main.css'],
   colorMode: {
-    preference: 'cupcake', // default value of $colorMode.preference
+    preference: 'dracula', // default value of $colorMode.preference
     dataValue: 'theme', // Use data-theme attribute
     classSuffix: '',
   },
