@@ -3,6 +3,7 @@ const colorMode = useColorMode()
 const themes = ['cupcake', 'dracula', 'emerald']
 
 const { user, isLoggedIn, logout } = useAuth()
+const { public: { appVersion } } = useRuntimeConfig()
 </script>
 
 <template>
@@ -79,8 +80,14 @@ const { user, isLoggedIn, logout } = useAuth()
       <slot />
     </main>
     
-    <footer class="p-10 text-center opacity-30 text-[10px] font-bold uppercase tracking-[0.5em]">
-       Calcetto Punti © 2026 • Engineered for Champions
+    <footer class="p-10 flex items-center justify-center gap-4 opacity-30 text-[10px] font-bold uppercase tracking-[0.5em]">
+      <span>Calcetto Punti © 2026</span>
+      <span>•</span>
+      <span>v{{ appVersion }}</span>
+      <span>•</span>
+      <a href="https://github.com/Lerma4/calcetto-tracker" target="_blank" rel="noopener noreferrer" class="hover:opacity-70 transition-opacity">
+        <Icon name="lucide:github" class="w-4 h-4" />
+      </a>
     </footer>
   </div>
 </template>

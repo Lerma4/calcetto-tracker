@@ -1,3 +1,5 @@
+import pkg from './package.json'
+
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
@@ -7,5 +9,10 @@ export default defineNuxtConfig({
     preference: 'cupcake', // default value of $colorMode.preference
     dataValue: 'theme', // Use data-theme attribute
     classSuffix: '',
-  }
+  },
+  runtimeConfig: {
+    public: {
+      appVersion: pkg.version,
+    },
+  },
 })
