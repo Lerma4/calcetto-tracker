@@ -4,8 +4,11 @@ import type { CompetitionDetail, Player } from '~/types'
 const route = useRoute()
 const compId = route.params.id
 
+const { canCreate, canEdit, canDelete } = usePermissions()
+const { isLoggedIn } = useAuth()
+
 const { data: competition, refresh } = await useFetch<CompetitionDetail>(`/api/competitions/${compId}`)
-const { data: allPlayers } = await useFetch<Player[]>('/api/players')
+const { data: allPlayers } = isLoggedIn.value ? await useFetch<Player[]>('/api/players') : { data: ref(null) }
 
 const activePlayers = computed(() => allPlayers.value?.filter(p => !p.disabled) || [])
 
@@ -411,7 +414,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
       </h2>
 
       <!-- Mode Selection (no matches yet, no mode chosen) -->
-      <div v-if="!hasCalendar && !competition?.calendarMode" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div v-if="!hasCalendar && !competition?.calendarMode && canCreate" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div class="bg-base-200 rounded-2xl p-6 flex flex-col items-center text-center gap-4">
           <Icon name="lucide:wand-2" class="w-8 h-8 opacity-60" />
           <div>
@@ -447,7 +450,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
       </div>
 
       <!-- Manual calendar form -->
-      <div v-if="competition?.calendarMode === 'manual'" class="space-y-4 mb-6">
+      <div v-if="competition?.calendarMode === 'manual' && canCreate" class="space-y-4 mb-6">
         <div v-if="!isCurrentDayFull" class="space-y-4">
           <div class="flex items-center gap-3">
             <span class="badge badge-accent badge-lg font-black tracking-widest">
@@ -492,29 +495,43 @@ const handleSaveMatchTeams = async (matchId: number) => {
                 <span class="font-black flex-1 text-right min-w-[100px]" :title="teamPlayers(match.team1Id)">
                   {{ teamName(match.team1Id) }}
                 </span>
-                <div class="flex items-center gap-2">
-                  <input type="number" min="0"
-                    class="input input-bordered input-sm rounded-lg w-16 text-center font-black"
-                    :value="getScores(match.id, match.score1, match.score2).score1"
-                    @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score1: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
-                  <span class="font-black opacity-30">vs</span>
-                  <input type="number" min="0"
-                    class="input input-bordered input-sm rounded-lg w-16 text-center font-black"
-                    :value="getScores(match.id, match.score1, match.score2).score2"
-                    @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score2: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
-                </div>
-                <span class="font-black flex-1 min-w-[100px]" :title="teamPlayers(match.team2Id)">
-                  {{ teamName(match.team2Id) }}
-                </span>
-                <button @click="handleSaveResult(match.id)" class="btn btn-primary btn-sm rounded-lg font-bold">
-                  <Icon name="lucide:save" class="w-4 h-4" />
-                </button>
-                <button @click="startEditMatch(match)" class="btn btn-ghost btn-sm rounded-lg">
-                  <Icon name="lucide:pencil" class="w-4 h-4" />
-                </button>
-                <button @click="handleDeleteMatch(match.id)" class="btn btn-ghost btn-sm text-error rounded-lg">
-                  <Icon name="lucide:trash-2" class="w-4 h-4" />
-                </button>
+                <!-- Editable scores (logged in) -->
+                <template v-if="canEdit">
+                  <div class="flex items-center gap-2">
+                    <input type="number" min="0"
+                      class="input input-bordered input-sm rounded-lg w-16 text-center font-black"
+                      :value="getScores(match.id, match.score1, match.score2).score1"
+                      @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score1: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
+                    <span class="font-black opacity-30">vs</span>
+                    <input type="number" min="0"
+                      class="input input-bordered input-sm rounded-lg w-16 text-center font-black"
+                      :value="getScores(match.id, match.score1, match.score2).score2"
+                      @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score2: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
+                  </div>
+                  <span class="font-black flex-1 min-w-[100px]" :title="teamPlayers(match.team2Id)">
+                    {{ teamName(match.team2Id) }}
+                  </span>
+                  <button @click="handleSaveResult(match.id)" class="btn btn-primary btn-sm rounded-lg font-bold">
+                    <Icon name="lucide:save" class="w-4 h-4" />
+                  </button>
+                  <button @click="startEditMatch(match)" class="btn btn-ghost btn-sm rounded-lg">
+                    <Icon name="lucide:pencil" class="w-4 h-4" />
+                  </button>
+                  <button @click="handleDeleteMatch(match.id)" class="btn btn-ghost btn-sm text-error rounded-lg">
+                    <Icon name="lucide:trash-2" class="w-4 h-4" />
+                  </button>
+                </template>
+                <!-- Read-only scores (guest) -->
+                <template v-else>
+                  <div class="flex items-center gap-2">
+                    <span class="font-black text-lg w-16 text-center">{{ match.score1 ?? '-' }}</span>
+                    <span class="font-black opacity-30">vs</span>
+                    <span class="font-black text-lg w-16 text-center">{{ match.score2 ?? '-' }}</span>
+                  </div>
+                  <span class="font-black flex-1 min-w-[100px]" :title="teamPlayers(match.team2Id)">
+                    {{ teamName(match.team2Id) }}
+                  </span>
+                </template>
                 <span v-if="match.state === 'played'" class="badge badge-success badge-xs font-bold">GIOCATA</span>
               </template>
 
@@ -546,7 +563,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
       </h2>
 
       <!-- Add Team Form (only if no calendar yet) -->
-      <form v-if="!hasCalendar" @submit.prevent="handleAddTeam" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <form v-if="!hasCalendar && canCreate" @submit.prevent="handleAddTeam" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <input v-model="newTeam.name" type="text" placeholder="Nome squadra" class="input input-bordered rounded-xl" required />
         <select v-model.number="newTeam.player1Id" class="select select-bordered rounded-xl" required>
           <option :value="0" disabled>Giocatore 1</option>
@@ -570,7 +587,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
             <span class="font-black text-lg">{{ team.name }}</span>
             <span class="ml-3 text-sm opacity-50">{{ team.player1.name }} {{ team.player1.surname }} & {{ team.player2.name }} {{ team.player2.surname }}</span>
           </div>
-          <button v-if="!hasCalendar" @click="handleDeleteTeam(team.id)" class="btn btn-ghost btn-sm text-error rounded-lg">
+          <button v-if="!hasCalendar && canDelete" @click="handleDeleteTeam(team.id)" class="btn btn-ghost btn-sm text-error rounded-lg">
             <Icon name="lucide:trash-2" class="w-4 h-4" />
           </button>
         </div>
