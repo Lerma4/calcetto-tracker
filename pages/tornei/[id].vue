@@ -101,8 +101,8 @@ const handleSaveResult = async (matchId: number) => {
   errorMsg.value = ''
   try {
     await $fetch(`/api/matches/${matchId}`, { method: 'PUT', body: { score1: scores.score1, score2: scores.score2 } })
-    delete localScores.value[matchId]
     await refresh()
+    delete localScores.value[matchId]
   } catch (e: any) {
     errorMsg.value = e.data?.statusMessage || 'Errore salvataggio risultato'
     setTimeout(() => errorMsg.value = '', 4000)
