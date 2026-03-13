@@ -36,8 +36,21 @@ const availablePlayers = computed(() =>
 
 // Team creation
 const newTeam = ref({ name: '', player1Id: 0, player2Id: 0 })
+const nameManuallyEdited = ref(false)
 const isAddingTeam = ref(false)
 const errorMsg = ref('')
+
+const playerLabel = (id: number) => {
+  const p = activePlayers.value.find(p => p.id === id)
+  if (!p) return ''
+  return p.nickname || p.name
+}
+
+watch(() => [newTeam.value.player1Id, newTeam.value.player2Id], ([p1, p2]) => {
+  if (!nameManuallyEdited.value && p1 && p2) {
+    newTeam.value.name = `${playerLabel(p1)} & ${playerLabel(p2)}`
+  }
+})
 
 const handleAddTeam = async () => {
   if (!newTeam.value.name || !newTeam.value.player1Id || !newTeam.value.player2Id) return
@@ -46,6 +59,7 @@ const handleAddTeam = async () => {
   try {
     await $fetch(`/api/competitions/${compId}/teams`, { method: 'POST', body: newTeam.value })
     newTeam.value = { name: '', player1Id: 0, player2Id: 0 }
+    nameManuallyEdited.value = false
     await refresh()
   } catch (e: any) {
     errorMsg.value = e.data?.statusMessage || 'Errore nella creazione della squadra'
@@ -663,7 +677,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
 
       <!-- Add Team Form (only if no calendar yet) -->
       <form v-if="!hasCalendar && canCreate" @submit.prevent="handleAddTeam" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <input v-model="newTeam.name" type="text" placeholder="Nome squadra" class="input input-bordered rounded-xl" required />
+        <input v-model="newTeam.name" @input="nameManuallyEdited = true" type="text" placeholder="Nome squadra" class="input input-bordered rounded-xl" required />
         <select v-model.number="newTeam.player1Id" class="select select-bordered rounded-xl" required>
           <option :value="0" disabled>Giocatore 1</option>
           <option v-for="p in availablePlayers.filter(p => p.id !== newTeam.player2Id)" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
