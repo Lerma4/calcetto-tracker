@@ -13,6 +13,7 @@ const { data: allPlayers } = isLoggedIn.value ? await useFetch<Player[]>('/api/p
 const isRefreshing = ref(false)
 const handleRefresh = async () => {
   isRefreshing.value = true
+  localScores.value = {}
   await refresh()
   isRefreshing.value = false
 }
@@ -100,6 +101,7 @@ const handleSaveResult = async (matchId: number) => {
   errorMsg.value = ''
   try {
     await $fetch(`/api/matches/${matchId}`, { method: 'PUT', body: { score1: scores.score1, score2: scores.score2 } })
+    delete localScores.value[matchId]
     await refresh()
   } catch (e: any) {
     errorMsg.value = e.data?.statusMessage || 'Errore salvataggio risultato'

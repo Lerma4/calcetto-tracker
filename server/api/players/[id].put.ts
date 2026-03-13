@@ -3,7 +3,7 @@ import { players } from '../../database/schema';
 import { eq } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
-  const id = Number(getRouterParam(event, 'id'));
+  const id = requireIntParam(event, 'id');
   const body = await readBody(event);
 
   if (!body.name || !body.surname) {

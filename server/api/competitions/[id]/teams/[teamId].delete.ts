@@ -3,8 +3,8 @@ import { teams, matches } from '../../../../database/schema';
 import { eq } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
-  const competitionId = Number(getRouterParam(event, 'id'));
-  const teamId = Number(getRouterParam(event, 'teamId'));
+  const competitionId = requireIntParam(event, 'id');
+  const teamId = requireIntParam(event, 'teamId');
 
   const existingMatches = await db.select({ id: matches.id })
     .from(matches)

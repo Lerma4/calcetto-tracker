@@ -4,7 +4,7 @@ export interface Player {
   surname: string;
   role: 'attaccante' | 'portiere' | 'indifferente';
   nickname: string | null;
-  disabled: number;
+  disabled: boolean;
 }
 
 export interface Competition {

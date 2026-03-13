@@ -14,17 +14,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Auto-seed: if no users exist, create admin/admin
-  const allUsers = db.select().from(users).all();
-  if (allUsers.length === 0) {
-    const hashedPassword = await bcrypt.hash('admin', 10);
-    db.insert(users).values({
-      username: 'admin',
-      password: hashedPassword,
-      mustChangePassword: 1,
-    }).run();
-  }
-
   // Find user
   const user = db
     .select()
@@ -58,6 +47,7 @@ export default defineEventHandler(async (event) => {
   // Set cookie (HttpOnly, 7 days)
   setCookie(event, 'auth-token', token, {
     httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: 60 * 60 * 24 * 7,
     sameSite: 'lax',

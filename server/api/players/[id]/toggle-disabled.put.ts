@@ -3,7 +3,7 @@ import { players } from '../../../database/schema';
 import { eq } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
-  const id = Number(getRouterParam(event, 'id'));
+  const id = requireIntParam(event, 'id');
 
   const player = await db.select().from(players).where(eq(players.id, id)).limit(1);
 

@@ -51,6 +51,7 @@ const handleEdit = async () => {
 }
 
 const handleDelete = async (id: number) => {
+  if (!confirm('Eliminare questo atleta?')) return
   errorMsg.value = ''
   try {
     await $fetch(`/api/players/${id}`, { method: 'DELETE' })

@@ -3,7 +3,7 @@ import { players, teams } from '../../database/schema';
 import { eq, or } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
-  const id = Number(getRouterParam(event, 'id'));
+  const id = requireIntParam(event, 'id');
 
   const linkedTeams = await db.select({ id: teams.id })
     .from(teams)

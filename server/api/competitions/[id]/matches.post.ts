@@ -3,7 +3,7 @@ import { teams, matches, competitions } from '../../../database/schema';
 import { eq } from 'drizzle-orm';
 
 export default defineEventHandler(async (event) => {
-  const competitionId = Number(getRouterParam(event, 'id'));
+  const competitionId = requireIntParam(event, 'id');
   const body = await readBody(event);
 
   if (!body.team1Id || !body.team2Id) {
