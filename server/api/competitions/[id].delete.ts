@@ -1,0 +1,19 @@
+import { db } from '../../database/db';
+import { competitions, teams, matches } from '../../database/schema';
+import { eq } from 'drizzle-orm';
+
+export default defineEventHandler(async (event) => {
+  const competitionId = Number(getRouterParam(event, 'id'));
+
+  const [comp] = await db.select().from(competitions).where(eq(competitions.id, competitionId));
+  if (!comp) {
+    throw createError({ statusCode: 404, statusMessage: 'Torneo non trovato' });
+  }
+
+  // Delete in order: matches → teams → competition
+  await db.delete(matches).where(eq(matches.competitionId, competitionId));
+  await db.delete(teams).where(eq(teams.competitionId, competitionId));
+  await db.delete(competitions).where(eq(competitions.id, competitionId));
+
+  return { success: true };
+});

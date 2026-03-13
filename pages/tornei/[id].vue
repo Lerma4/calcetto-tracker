@@ -79,10 +79,9 @@ const handleGenerateCalendar = async () => {
   await refresh()
 }
 
-const handleStartManualCalendar = () => {
-  if (competition.value) {
-    competition.value.calendarMode = 'manual'
-  }
+const handleStartManualCalendar = async () => {
+  await $fetch(`/api/competitions/${compId}/start-manual`, { method: 'POST' })
+  await refresh()
 }
 
 // Match results - local scores for editing
@@ -211,6 +210,12 @@ const existingMatchups = computed(() => {
   }))
 })
 
+const allMatchupsComplete = computed(() => {
+  const n = competition.value?.teams?.length || 0
+  const totalPossible = n * (n - 1) / 2
+  return existingMatchups.value.size >= totalPossible
+})
+
 const availableTeamsForMatch = (excludeTeamId?: number) => {
   const allTeams = competition.value?.teams || []
   return allTeams.filter(t => {
@@ -240,6 +245,31 @@ const handleAddMatch = async () => {
     setTimeout(() => errorMsg.value = '', 4000)
   } finally {
     isAddingMatch.value = false
+  }
+}
+
+// Delete competition
+const deleteConfirmName = ref('')
+const isDeletingComp = ref(false)
+const deleteModalRef = ref<HTMLDialogElement | null>(null)
+
+const openDeleteModal = () => {
+  deleteConfirmName.value = ''
+  deleteModalRef.value?.showModal()
+}
+
+const handleDeleteCompetition = async () => {
+  if (deleteConfirmName.value !== competition.value?.name) return
+  isDeletingComp.value = true
+  try {
+    await $fetch(`/api/competitions/${compId}`, { method: 'DELETE' })
+    await navigateTo('/tornei')
+  } catch (e: any) {
+    errorMsg.value = e.data?.statusMessage || 'Errore nell\'eliminazione del torneo'
+    setTimeout(() => errorMsg.value = '', 4000)
+    deleteModalRef.value?.close()
+  } finally {
+    isDeletingComp.value = false
   }
 }
 
@@ -304,6 +334,9 @@ const handleSaveMatchTeams = async (matchId: number) => {
       <div class="flex items-center gap-2 shrink-0">
         <button @click="handleRefresh" class="btn btn-ghost btn-circle btn-sm sm:btn-md rounded-2xl" :disabled="isRefreshing" title="Aggiorna dati">
           <Icon name="lucide:refresh-cw" class="w-4 h-4 sm:w-5 sm:h-5 transition-transform" :class="{ 'animate-spin': isRefreshing }" />
+        </button>
+        <button v-if="canDelete" @click="openDeleteModal" class="btn btn-ghost btn-circle btn-sm sm:btn-md rounded-2xl text-error" title="Elimina torneo">
+          <Icon name="lucide:trash-2" class="w-4 h-4 sm:w-5 sm:h-5" />
         </button>
         <span class="badge badge-primary badge-sm sm:badge-lg font-black tracking-widest">{{ competition?.winPoints }} PV</span>
       </div>
@@ -492,7 +525,13 @@ const handleSaveMatchTeams = async (matchId: number) => {
 
       <!-- Manual calendar form -->
       <div v-if="competition?.calendarMode === 'manual' && canCreate" class="space-y-4 mb-6">
-        <div v-if="!isCurrentDayFull" class="space-y-4">
+        <div v-if="allMatchupsComplete" class="flex items-center gap-3">
+          <span class="badge badge-success badge-lg font-black tracking-widest">
+            <Icon name="lucide:check-circle" class="w-4 h-4 mr-1" />
+            Calendario Completo
+          </span>
+        </div>
+        <div v-else-if="!isCurrentDayFull" class="space-y-4">
           <div class="flex items-center gap-3">
             <span class="badge badge-accent badge-lg font-black tracking-widest">
               Giornata {{ currentMatchday }} — {{ currentDayMatchCount }}/{{ matchesPerDay }}
@@ -625,11 +664,11 @@ const handleSaveMatchTeams = async (matchId: number) => {
         <input v-model="newTeam.name" type="text" placeholder="Nome squadra" class="input input-bordered rounded-xl" required />
         <select v-model.number="newTeam.player1Id" class="select select-bordered rounded-xl" required>
           <option :value="0" disabled>Giocatore 1</option>
-          <option v-for="p in availablePlayers" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
+          <option v-for="p in availablePlayers.filter(p => p.id !== newTeam.player2Id)" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
         </select>
         <select v-model.number="newTeam.player2Id" class="select select-bordered rounded-xl" required>
           <option :value="0" disabled>Giocatore 2</option>
-          <option v-for="p in availablePlayers" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
+          <option v-for="p in availablePlayers.filter(p => p.id !== newTeam.player1Id)" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
         </select>
         <button type="submit" class="btn btn-primary rounded-xl font-black tracking-widest" :disabled="isAddingTeam">
           <span v-if="isAddingTeam" class="loading loading-spinner loading-sm"></span>
@@ -659,5 +698,38 @@ const handleSaveMatchTeams = async (matchId: number) => {
       </div>
     </div>
     </template>
+
+    <!-- Delete Competition Modal -->
+    <dialog ref="deleteModalRef" class="modal">
+      <div class="modal-box rounded-3xl">
+        <h3 class="text-xl font-black uppercase tracking-widest text-error mb-4">Elimina Torneo</h3>
+        <p class="text-sm opacity-70 mb-2">
+          Questa azione è irreversibile. Verranno eliminati tutte le squadre, le partite e i risultati.
+        </p>
+        <p class="text-sm font-bold mb-4">
+          Scrivi <span class="text-error">{{ competition?.name }}</span> per confermare:
+        </p>
+        <input
+          v-model="deleteConfirmName"
+          type="text"
+          :placeholder="competition?.name"
+          class="input input-bordered w-full rounded-xl mb-4"
+        />
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn btn-ghost rounded-xl font-bold">Annulla</button>
+          </form>
+          <button
+            @click="handleDeleteCompetition"
+            class="btn btn-error rounded-xl font-black tracking-widest"
+            :disabled="deleteConfirmName !== competition?.name || isDeletingComp"
+          >
+            <span v-if="isDeletingComp" class="loading loading-spinner loading-sm"></span>
+            ELIMINA
+          </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
   </div>
 </template>
