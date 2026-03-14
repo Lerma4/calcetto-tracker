@@ -45,7 +45,7 @@ const handleLogin = async () => {
       </div>
 
       <!-- Guest Access Card -->
-      <div class="card bg-base-100 shadow-md border border-base-content border-opacity-5 mb-4">
+      <div class="card bg-base-100 shadow-md border border-base-content/5 mb-4">
         <div class="card-body p-6 flex flex-row items-center justify-between gap-4">
           <div class="flex items-center gap-3">
             <Icon name="lucide:eye" class="w-5 h-5 opacity-40 shrink-0" />
@@ -64,7 +64,7 @@ const handleLogin = async () => {
       </div>
 
       <!-- Login Card -->
-      <div class="card bg-base-100 shadow-2xl border border-base-content border-opacity-5">
+      <div class="card bg-base-100 shadow-2xl border border-base-content/5">
         <div class="card-body p-8 space-y-6">
           <h2 class="text-lg font-black tracking-widest uppercase text-center opacity-60">
             Accesso
@@ -77,34 +77,34 @@ const handleLogin = async () => {
           </div>
 
           <form @submit.prevent="handleLogin" class="space-y-5">
-            <div class="form-control">
+            <div class="">
               <label class="label">
                 <span class="label-text font-bold text-xs uppercase tracking-widest opacity-50">Username</span>
               </label>
               <div class="relative">
-                <Icon name="lucide:user" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                <Icon name="lucide:user" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50 z-10" />
                 <input
                   v-model="username"
                   type="text"
                   placeholder="admin"
-                  class="input input-bordered w-full pl-11 rounded-xl focus:input-primary"
+                  class="input input w-full pl-11 rounded-xl focus:input-primary"
                   autocomplete="username"
                   required
                 />
               </div>
             </div>
 
-            <div class="form-control">
+            <div class="">
               <label class="label">
                 <span class="label-text font-bold text-xs uppercase tracking-widest opacity-50">Password</span>
               </label>
               <div class="relative">
-                <Icon name="lucide:lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                <Icon name="lucide:lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50 z-10" />
                 <input
                   v-model="password"
                   type="password"
                   placeholder="••••••••"
-                  class="input input-bordered w-full pl-11 rounded-xl focus:input-primary"
+                  class="input input w-full pl-11 rounded-xl focus:input-primary"
                   autocomplete="current-password"
                   required
                 />

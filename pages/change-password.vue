@@ -56,7 +56,7 @@ const handleChangePassword = async () => {
       </div>
 
       <!-- Change Password Card -->
-      <div class="card bg-base-100 shadow-2xl border border-base-content border-opacity-5">
+      <div class="card bg-base-100 shadow-2xl border border-base-content/5">
         <div class="card-body p-8 space-y-6">
           <div class="text-center space-y-2">
             <h2 class="text-lg font-black tracking-widest uppercase opacity-60">
@@ -74,34 +74,34 @@ const handleChangePassword = async () => {
           </div>
 
           <form @submit.prevent="handleChangePassword" class="space-y-5">
-            <div class="form-control">
+            <div class="">
               <label class="label">
                 <span class="label-text font-bold text-xs uppercase tracking-widest opacity-50">Nuova Password</span>
               </label>
               <div class="relative">
-                <Icon name="lucide:lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                <Icon name="lucide:lock" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50 z-10" />
                 <input
                   v-model="newPassword"
                   type="password"
                   placeholder="••••••••"
-                  class="input input-bordered w-full pl-11 rounded-xl focus:input-primary"
+                  class="input input w-full pl-11 rounded-xl focus:input-primary"
                   autocomplete="new-password"
                   required
                 />
               </div>
             </div>
 
-            <div class="form-control">
+            <div class="">
               <label class="label">
                 <span class="label-text font-bold text-xs uppercase tracking-widest opacity-50">Conferma Password</span>
               </label>
               <div class="relative">
-                <Icon name="lucide:lock-keyhole" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-30" />
+                <Icon name="lucide:lock-keyhole" class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50 z-10" />
                 <input
                   v-model="confirmPassword"
                   type="password"
                   placeholder="••••••••"
-                  class="input input-bordered w-full pl-11 rounded-xl focus:input-primary"
+                  class="input input w-full pl-11 rounded-xl focus:input-primary"
                   autocomplete="new-password"
                   required
                 />

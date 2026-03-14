@@ -5,6 +5,8 @@
 </template>
 
 <style>
+@reference "~/assets/css/main.css";
+
 /* Smooth typography and layout base */
 body {
   margin: 0;
@@ -20,7 +22,7 @@ body {
   @apply bg-base-300;
 }
 ::-webkit-scrollbar-thumb {
-  @apply bg-primary bg-opacity-20 rounded-full border-2 border-base-300 hover:bg-primary hover:bg-opacity-40 transition-colors;
+  @apply bg-primary/20 rounded-full border-2 border-base-300 hover:bg-primary/40 transition-colors;
 }
 
 /* Page Transitions */

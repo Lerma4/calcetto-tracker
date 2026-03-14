@@ -29,17 +29,17 @@ const handleAdd = async () => {
     <!-- Add Competition Card -->
     <BaseSectionCard v-if="canCreate" title="Nuovo Torneo" icon="lucide:plus-circle">
       <form @submit.prevent="handleAdd" class="grid grid-cols-1 md:grid-cols-[1fr_120px_auto] gap-4 items-end">
-        <div class="form-control w-full">
+        <div class="w-full">
           <label class="label">
             <span class="label-text text-xs font-bold uppercase tracking-widest opacity-50">Nome torneo</span>
           </label>
-          <input v-model="newComp.name" type="text" placeholder="Es. Serie A 2024" class="input input-bordered w-full rounded-xl focus:border-secondary transition-colors" required />
+          <input v-model="newComp.name" type="text" placeholder="Es. Serie A 2024" class="input input w-full rounded-xl focus:border-secondary transition-colors" required />
         </div>
-        <div class="form-control w-full">
+        <div class="w-full">
           <label class="label">
             <span class="label-text text-xs font-bold uppercase tracking-widest opacity-50">Punti vittoria</span>
           </label>
-          <input v-model.number="newComp.winPoints" type="number" min="1" class="input input-bordered w-full rounded-xl focus:border-secondary transition-colors" required />
+          <input v-model.number="newComp.winPoints" type="number" min="1" class="input input w-full rounded-xl focus:border-secondary transition-colors" required />
         </div>
         <button type="submit" class="btn btn-secondary rounded-xl font-black tracking-widest w-full md:w-auto h-12" :disabled="isAdding">
           <span v-if="isAdding" class="loading loading-spinner loading-sm"></span>
@@ -69,7 +69,7 @@ const handleAdd = async () => {
                       <tr v-for="comp in competitions" :key="comp.id" class="hover:bg-base-200 transition-all group">
                          <td class="px-10 py-8">
                             <div class="flex items-center gap-6">
-                               <div class="w-16 h-16 rounded-3xl bg-primary bg-opacity-10 text-primary flex items-center justify-center font-black text-2xl shadow-inner transform group-hover:rotate-12 transition-all">
+                               <div class="w-16 h-16 rounded-3xl bg-primary/10 text-primary flex items-center justify-center font-black text-2xl shadow-inner transform group-hover:rotate-12 transition-all">
                                   {{ comp.name.charAt(0) }}
                                </div>
                                <div>

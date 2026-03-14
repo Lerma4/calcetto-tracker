@@ -82,14 +82,14 @@ const handleToggle = async (id: number) => {
     <!-- Add Player Card -->
     <BaseSectionCard title="Nuovo Atleta" icon="lucide:user-plus">
       <form @submit.prevent="handleAdd" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <input v-model="newPlayer.name" type="text" placeholder="Nome" class="input input-bordered rounded-xl" required />
-        <input v-model="newPlayer.surname" type="text" placeholder="Cognome" class="input input-bordered rounded-xl" required />
-        <select v-model="newPlayer.role" class="select select-bordered rounded-xl">
+        <input v-model="newPlayer.name" type="text" placeholder="Nome" class="input input rounded-xl" required />
+        <input v-model="newPlayer.surname" type="text" placeholder="Cognome" class="input input rounded-xl" required />
+        <select v-model="newPlayer.role" class="select select rounded-xl">
           <option value="attaccante">Attaccante</option>
           <option value="portiere">Portiere</option>
           <option value="indifferente">Indifferente</option>
         </select>
-        <input v-model="newPlayer.nickname" type="text" placeholder="Nickname (opzionale)" class="input input-bordered rounded-xl" />
+        <input v-model="newPlayer.nickname" type="text" placeholder="Nickname (opzionale)" class="input input rounded-xl" />
         <button type="submit" class="btn btn-primary rounded-xl font-black tracking-widest" :disabled="isAdding">
           <span v-if="isAdding" class="loading loading-spinner loading-sm"></span>
           AGGIUNGI
@@ -103,9 +103,9 @@ const handleToggle = async (id: number) => {
         <div class="flex flex-col sm:flex-row gap-3 mb-6">
           <div class="relative flex-1">
             <Icon name="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
-            <input v-model="searchName" type="text" placeholder="Cerca per nome, cognome o nickname..." class="input input-bordered rounded-xl w-full pl-10" />
+            <input v-model="searchName" type="text" placeholder="Cerca per nome, cognome o nickname..." class="input input rounded-xl w-full pl-10" />
           </div>
-          <select v-model="searchRole" class="select select-bordered rounded-xl">
+          <select v-model="searchRole" class="select select rounded-xl">
             <option value="">Tutti i ruoli</option>
             <option value="attaccante">Attaccante</option>
             <option value="portiere">Portiere</option>
@@ -172,14 +172,14 @@ const handleToggle = async (id: number) => {
       <div class="modal-box rounded-[2rem]">
         <h3 class="font-black text-lg uppercase tracking-widest mb-6">Modifica Atleta</h3>
         <form @submit.prevent="handleEdit" class="space-y-4">
-          <input v-model="editForm.name" type="text" placeholder="Nome" class="input input-bordered rounded-xl w-full" required />
-          <input v-model="editForm.surname" type="text" placeholder="Cognome" class="input input-bordered rounded-xl w-full" required />
-          <select v-model="editForm.role" class="select select-bordered rounded-xl w-full">
+          <input v-model="editForm.name" type="text" placeholder="Nome" class="input input rounded-xl w-full" required />
+          <input v-model="editForm.surname" type="text" placeholder="Cognome" class="input input rounded-xl w-full" required />
+          <select v-model="editForm.role" class="select select rounded-xl w-full">
             <option value="attaccante">Attaccante</option>
             <option value="portiere">Portiere</option>
             <option value="indifferente">Indifferente</option>
           </select>
-          <input v-model="editForm.nickname" type="text" placeholder="Nickname (opzionale)" class="input input-bordered rounded-xl w-full" />
+          <input v-model="editForm.nickname" type="text" placeholder="Nickname (opzionale)" class="input input rounded-xl w-full" />
           <div class="modal-action">
             <button type="button" class="btn btn-ghost rounded-xl" onclick="document.getElementById('edit-modal').close()">ANNULLA</button>
             <button type="submit" class="btn btn-primary rounded-xl font-black tracking-widest">SALVA</button>

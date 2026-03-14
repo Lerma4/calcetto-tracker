@@ -29,7 +29,7 @@ function selectTheme(theme: string) {
         </div>
 
         <!-- Desktop nav -->
-        <nav v-if="isLoggedIn" class="hidden lg:flex items-center gap-2 bg-base-200 bg-opacity-50 p-1.5 rounded-2xl border border-base-content border-opacity-5">
+        <nav v-if="isLoggedIn" class="hidden lg:flex items-center gap-2 bg-base-200/50 p-1.5 rounded-2xl border border-base-content/5">
           <NuxtLink to="/" class="btn btn-ghost btn-sm rounded-xl font-black tracking-widest text-[11px] gap-2 px-6 hover:bg-base-100">
             <Icon name="lucide:layout-dashboard" /> DASHBOARD
           </NuxtLink>
@@ -45,7 +45,7 @@ function selectTheme(theme: string) {
           <!-- Theme button -->
           <!-- Desktop: dropdown -->
           <div class="hidden sm:block dropdown dropdown-end">
-            <div tabindex="0" role="button" class="btn btn-outline border-2 border-primary border-opacity-20 btn-sm rounded-2xl gap-2 font-black tracking-widest text-[10px] px-6 hover:bg-primary hover:border-primary transition-all shadow-lg hover:shadow-primary">
+            <div tabindex="0" role="button" class="btn btn-outline border-2 border-primary/20 btn-sm rounded-2xl gap-2 font-black tracking-widest text-[10px] px-6 hover:bg-primary hover:border-primary transition-all shadow-lg hover:shadow-primary">
               <Icon name="lucide:palette" class="w-4 h-4" /> {{ colorMode.preference.toUpperCase() }}
             </div>
             <ul tabindex="0" class="dropdown-content z-[101] menu p-4 shadow-2xl bg-base-100 rounded-[1.5rem] w-64 mt-6 border-4 border-base-200 animate-in fade-in slide-in-from-top-4 duration-300">
@@ -58,7 +58,7 @@ function selectTheme(theme: string) {
                 >
                    <span class="uppercase tracking-widest text-xs">{{ theme }}</span>
                    <Icon v-if="colorMode.preference === theme" name="lucide:check-circle-2" class="w-4 h-4" />
-                   <div v-else class="w-3 h-3 rounded-full border-2 border-base-content border-opacity-20"></div>
+                   <div v-else class="w-3 h-3 rounded-full border-2 border-base-content/20"></div>
                 </button>
               </li>
             </ul>
@@ -102,7 +102,7 @@ function selectTheme(theme: string) {
 
     <!-- Mobile bottom navigation bar -->
     <nav v-if="isLoggedIn" class="lg:hidden fixed bottom-0 left-0 right-0 z-[100] px-3 pb-3 pt-1">
-      <div class="glass-card rounded-2xl flex items-center justify-around py-2 border border-base-content border-opacity-5">
+      <div class="glass-card rounded-2xl flex items-center justify-around py-2 border border-base-content/5">
         <NuxtLink to="/" class="flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all hover:bg-base-200">
           <Icon name="lucide:layout-dashboard" class="w-5 h-5" />
           <span class="text-[9px] font-bold uppercase tracking-widest opacity-70">Home</span>
@@ -128,7 +128,7 @@ function selectTheme(theme: string) {
     <Teleport to="body">
       <Transition name="theme-modal">
         <div v-if="themeModalOpen" class="fixed inset-0 z-[200] flex items-center justify-center p-6" @click.self="themeModalOpen = false">
-          <div class="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm" @click="themeModalOpen = false" />
+          <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" @click="themeModalOpen = false" />
           <div class="relative glass-card rounded-[2rem] p-6 w-full max-w-xs border-4 border-base-200 shadow-2xl">
             <div class="flex items-center justify-between mb-5">
               <h3 class="uppercase text-[10px] font-black opacity-40 tracking-[0.3em]">Scegli Tema</h3>
@@ -145,7 +145,7 @@ function selectTheme(theme: string) {
               >
                 <span class="uppercase tracking-widest text-sm font-bold">{{ theme }}</span>
                 <Icon v-if="colorMode.preference === theme" name="lucide:check-circle-2" class="w-5 h-5" />
-                <div v-else class="w-4 h-4 rounded-full border-2 border-base-content border-opacity-20"></div>
+                <div v-else class="w-4 h-4 rounded-full border-2 border-base-content/20"></div>
               </button>
             </div>
           </div>

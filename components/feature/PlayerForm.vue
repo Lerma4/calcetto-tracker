@@ -28,20 +28,20 @@ const handleSubmit = () => {
      <div class="card-body p-8 gap-8 mt-4">
        <form @submit.prevent="handleSubmit" class="space-y-6">
           <div class="grid grid-cols-2 gap-4">
-            <div class="form-control">
+            <div class="">
               <label class="label pb-1"><span class="label-text font-black text-[10px] uppercase tracking-widest opacity-40">Nome</span></label>
-              <input v-model="player.name" type="text" class="input bg-base-200 bg-opacity-50 rounded-2xl border-none font-bold" required />
+              <input v-model="player.name" type="text" class="input bg-base-200/50 rounded-2xl border-none font-bold" required />
             </div>
-            <div class="form-control">
+            <div class="">
               <label class="label pb-1"><span class="label-text font-black text-[10px] uppercase tracking-widest opacity-40">Cognome</span></label>
               <input v-model="player.surname" type="text" class="input bg-base-200/50 rounded-2xl border-none font-bold" required />
             </div>
           </div>
-          <div class="form-control">
+          <div class="">
             <label class="label pb-1"><span class="label-text font-black text-[10px] uppercase tracking-widest opacity-40">Pseudonimo</span></label>
             <input v-model="player.nickname" type="text" placeholder="@" class="input bg-base-200/50 rounded-2xl border-none font-bold italic" />
           </div>
-          <div class="form-control">
+          <div class="">
             <label class="label pb-1"><span class="label-text font-black text-[10px] uppercase tracking-widest opacity-40">Strategia Ruolo</span></label>
             <select v-model="player.role" class="select select-lg bg-base-200/50 rounded-2xl border-none font-black text-primary">
               <option value="attaccante">ATTACCANTE 🏹</option>

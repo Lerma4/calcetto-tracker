@@ -554,13 +554,13 @@ const handleSaveMatchTeams = async (matchId: number) => {
             </span>
           </div>
           <form @submit.prevent="handleAddMatch" class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <select v-model.number="newMatch.team1Id" class="select select-bordered rounded-xl" required>
+            <select v-model.number="newMatch.team1Id" class="select select rounded-xl" required>
               <option :value="0" disabled>Squadra casa</option>
               <option v-for="t in availableTeamsForMatch(newMatch.team2Id || undefined)" :key="t.id" :value="t.id">
                 {{ t.name }}
               </option>
             </select>
-            <select v-model.number="newMatch.team2Id" class="select select-bordered rounded-xl" required>
+            <select v-model.number="newMatch.team2Id" class="select select rounded-xl" required>
               <option :value="0" disabled>Squadra ospite</option>
               <option v-for="t in availableTeamsForMatch(newMatch.team1Id || undefined)" :key="t.id" :value="t.id">
                 {{ t.name }}
@@ -608,12 +608,12 @@ const handleSaveMatchTeams = async (matchId: number) => {
                     <div class="flex items-center gap-1 sm:gap-3 px-1 sm:px-2 shrink-0">
                       <template v-if="canEdit">
                         <input type="number" min="0"
-                          class="input input-bordered input-sm rounded-lg w-12 sm:w-16 text-center font-black"
+                          class="input input input-sm rounded-lg w-12 sm:w-16 text-center font-black"
                           :value="getScores(match.id, match.score1, match.score2).score1"
                           @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score1: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
                         <span class="font-black opacity-30 text-xs">vs</span>
                         <input type="number" min="0"
-                          class="input input-bordered input-sm rounded-lg w-12 sm:w-16 text-center font-black"
+                          class="input input input-sm rounded-lg w-12 sm:w-16 text-center font-black"
                           :value="getScores(match.id, match.score1, match.score2).score2"
                           @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score2: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
                       </template>
@@ -646,11 +646,11 @@ const handleSaveMatchTeams = async (matchId: number) => {
 
               <template v-else>
                 <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-                  <select v-model.number="editMatch.team1Id" class="select select-bordered select-sm rounded-lg flex-1">
+                  <select v-model.number="editMatch.team1Id" class="select select select-sm rounded-lg flex-1">
                     <option v-for="t in competition?.teams" :key="t.id" :value="t.id">{{ t.name }}</option>
                   </select>
                   <span class="font-black opacity-30 text-center">vs</span>
-                  <select v-model.number="editMatch.team2Id" class="select select-bordered select-sm rounded-lg flex-1">
+                  <select v-model.number="editMatch.team2Id" class="select select select-sm rounded-lg flex-1">
                     <option v-for="t in competition?.teams" :key="t.id" :value="t.id">{{ t.name }}</option>
                   </select>
                   <div class="flex gap-2 justify-end">
@@ -677,12 +677,12 @@ const handleSaveMatchTeams = async (matchId: number) => {
 
       <!-- Add Team Form (only if no calendar yet) -->
       <form v-if="!hasCalendar && canCreate" @submit.prevent="handleAddTeam" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <input v-model="newTeam.name" @input="nameManuallyEdited = true" type="text" placeholder="Nome squadra" class="input input-bordered rounded-xl" required />
-        <select v-model.number="newTeam.player1Id" class="select select-bordered rounded-xl" required>
+        <input v-model="newTeam.name" @input="nameManuallyEdited = true" type="text" placeholder="Nome squadra" class="input input rounded-xl" required />
+        <select v-model.number="newTeam.player1Id" class="select select rounded-xl" required>
           <option :value="0" disabled>Giocatore 1</option>
           <option v-for="p in availablePlayers.filter(p => p.id !== newTeam.player2Id)" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
         </select>
-        <select v-model.number="newTeam.player2Id" class="select select-bordered rounded-xl" required>
+        <select v-model.number="newTeam.player2Id" class="select select rounded-xl" required>
           <option :value="0" disabled>Giocatore 2</option>
           <option v-for="p in availablePlayers.filter(p => p.id !== newTeam.player1Id)" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
         </select>
@@ -729,7 +729,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
           v-model="deleteConfirmName"
           type="text"
           :placeholder="competition?.name"
-          class="input input-bordered w-full rounded-xl mb-4"
+          class="input input w-full rounded-xl mb-4"
         />
         <div class="modal-action">
           <form method="dialog">

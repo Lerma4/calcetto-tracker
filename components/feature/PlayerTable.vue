@@ -8,7 +8,7 @@ defineProps<{
 
 <template>
   <div class="card bg-base-100 rounded-[3rem] shadow-2xl border-2 border-base-200 overflow-hidden">
-     <div class="p-5 sm:p-8 md:p-10 pb-6 flex items-end justify-between border-b border-base-200 bg-base-100 bg-opacity-50">
+     <div class="p-5 sm:p-8 md:p-10 pb-6 flex items-end justify-between border-b border-base-200 bg-base-100/50">
        <div>
           <h2 class="text-2xl sm:text-3xl md:text-4xl font-black font-heading tracking-tighter uppercase leading-none">Roster Ufficiale</h2>
           <p class="text-[10px] font-black opacity-30 uppercase tracking-[0.4em] mt-3">Anagrafica Atleti Verificati</p>
@@ -19,14 +19,14 @@ defineProps<{
         <div v-if="players && players.length > 0" class="overflow-x-auto">
             <table class="table table-lg w-full">
               <thead>
-                <tr class="bg-base-200 bg-opacity-40 text-[10px] uppercase font-black tracking-[0.2em] opacity-40">
+                <tr class="bg-base-200/40 text-[10px] uppercase font-black tracking-[0.2em] opacity-40">
                   <th class="py-6 px-10">Profilo Atleta</th>
                   <th>Social handle</th>
                   <th class="text-right pr-10">Role Bias</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="player in players" :key="player.id" class="hover:bg-base-200 hover:bg-opacity-20 transition-all border-base-200">
+                <tr v-for="player in players" :key="player.id" class="hover:bg-base-200/20 transition-all border-base-200">
                    <td class="px-10 py-6">
                       <div class="flex items-center gap-5">
                          <div class="avatar placeholder">
