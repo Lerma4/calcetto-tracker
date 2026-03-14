@@ -4,7 +4,6 @@ const themes = ['cupcake', 'dracula', 'emerald']
 const themeModalOpen = ref(false)
 
 const { user, isLoggedIn, logout } = useAuth()
-const { public: { appVersion } } = useRuntimeConfig()
 
 function selectTheme(theme: string) {
   colorMode.preference = theme
@@ -19,8 +18,8 @@ function selectTheme(theme: string) {
       <div class="navbar glass-card rounded-[2rem] px-4 sm:px-8 py-2 sm:py-3 flex items-center justify-between">
         <!-- Logo -->
         <div class="flex items-center gap-2 sm:gap-4">
-          <div class="p-2 sm:p-3 bg-primary rounded-xl sm:rounded-2xl text-primary-content shadow-lg transform hover:rotate-6 transition-transform">
-             <Icon name="lucide:trophy" class="w-5 h-5 sm:w-7 sm:h-7" />
+          <div class="p-1 sm:p-1.5 bg-primary rounded-xl sm:rounded-2xl shadow-lg transform hover:rotate-6 transition-transform">
+            <img src="/logo.svg" class="w-7 h-7 sm:w-10 sm:h-10 block" alt="Logo" />
           </div>
           <div class="hidden sm:flex flex-col">
             <NuxtLink :to="isLoggedIn ? '/' : '/tornei'" class="text-2xl font-black italic tracking-tighter leading-none bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent cursor-pointer">CALCETTO PUNTI</NuxtLink>
@@ -86,10 +85,11 @@ function selectTheme(theme: string) {
             </div>
             <button
               @click="logout"
-              class="btn btn-ghost btn-sm btn-square sm:btn-wide rounded-xl text-error hover:bg-error hover:text-error-content transition-all"
+              class="btn btn-ghost btn-sm rounded-xl font-black tracking-widest text-[11px] gap-2 px-3 sm:px-6 text-error hover:bg-error hover:text-error-content transition-all"
               title="Logout"
             >
               <Icon name="lucide:log-out" class="w-4 h-4" />
+              <span class="hidden sm:inline">LOGOUT</span>
             </button>
           </div>
           <!-- Guest login button -->
@@ -122,25 +122,7 @@ function selectTheme(theme: string) {
       <slot />
     </main>
 
-    <!-- Footer: compact on mobile -->
-    <footer class="hidden lg:flex p-10 items-center justify-center gap-4 opacity-30 text-[10px] font-bold uppercase tracking-[0.5em]">
-      <span>Calcetto Punti © 2026</span>
-      <span>•</span>
-      <span>v{{ appVersion }}</span>
-      <span>•</span>
-      <a href="https://github.com/Lerma4/calcetto-tracker" target="_blank" rel="noopener noreferrer" class="hover:opacity-70 transition-opacity">
-        <Icon name="lucide:github" class="w-4 h-4" />
-      </a>
-    </footer>
-    <footer class="lg:hidden flex p-4 pb-20 items-center justify-center gap-3 opacity-30 text-[9px] font-bold uppercase tracking-[0.3em]">
-      <span>© 2026</span>
-      <span>•</span>
-      <span>v{{ appVersion }}</span>
-      <span>•</span>
-      <a href="https://github.com/Lerma4/calcetto-tracker" target="_blank" rel="noopener noreferrer" class="hover:opacity-70 transition-opacity">
-        <Icon name="lucide:github" class="w-3 h-3" />
-      </a>
-    </footer>
+    <BaseAppFooter />
 
     <!-- Theme modal (mobile centered) -->
     <Teleport to="body">

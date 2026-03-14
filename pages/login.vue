@@ -27,13 +27,13 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <div class="min-h-screen bg-base-300 flex items-center justify-center px-4">
+  <div class="min-h-screen bg-base-300 flex flex-col items-center justify-center px-4">
     <div class="w-full max-w-md">
       <!-- Logo -->
       <div class="text-center mb-10">
         <div class="inline-flex items-center gap-4 mb-6">
-          <div class="p-4 bg-primary rounded-2xl text-primary-content shadow-xl">
-            <Icon name="lucide:trophy" class="w-10 h-10" />
+          <div class="p-2 bg-primary rounded-2xl shadow-xl">
+            <img src="/logo.svg" class="w-14 h-14 block" alt="Logo" />
           </div>
         </div>
         <h1 class="text-3xl font-black italic tracking-tighter bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
@@ -128,5 +128,6 @@ const handleLogin = async () => {
         </div>
       </div>
     </div>
+    <BaseAppFooter />
   </div>
 </template>
