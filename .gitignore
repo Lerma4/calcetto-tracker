@@ -35,3 +35,6 @@ test-screenshots/
 # Claude Code
 .claude/
 .agents/
+
+# Git worktrees
+.worktrees/
