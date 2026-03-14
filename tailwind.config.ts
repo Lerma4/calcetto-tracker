@@ -10,6 +10,6 @@ export default <Config>{
   ],
   plugins: [require('daisyui')],
   daisyui: {
-    themes: ["cupcake", "dracula", "emerald"],
+    themes: ["cupcake", "dracula", "emerald", "cyberpunk", "lofi", "caramellatte"],
   },
 }

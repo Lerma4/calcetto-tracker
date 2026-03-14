@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const colorMode = useColorMode()
-const themes = ['cupcake', 'dracula', 'emerald']
+const themes = ['cupcake', 'dracula', 'emerald', 'cyberpunk', 'lofi', 'caramellatte']
 const themeModalOpen = ref(false)
 
 const { user, isLoggedIn, logout } = useAuth()
@@ -19,7 +19,7 @@ function selectTheme(theme: string) {
         <!-- Logo -->
         <div class="flex items-center gap-2 sm:gap-4">
           <div class="p-1 sm:p-1.5 bg-primary rounded-xl sm:rounded-2xl shadow-lg transform hover:rotate-6 transition-transform">
-            <img src="/logo.svg" class="w-7 h-7 sm:w-10 sm:h-10 block" alt="Logo" />
+            <div class="w-7 h-7 sm:w-10 sm:h-10 bg-primary-content" style="-webkit-mask-image: url('/logo.svg'); mask-image: url('/logo.svg'); -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;" role="img" aria-label="Logo"></div>
           </div>
           <div class="hidden sm:flex flex-col">
             <NuxtLink :to="isLoggedIn ? '/' : '/tornei'" class="text-2xl font-black italic tracking-tighter leading-none bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent cursor-pointer">CALCETTO PUNTI</NuxtLink>

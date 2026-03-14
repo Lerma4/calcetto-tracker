@@ -33,7 +33,7 @@ const handleLogin = async () => {
       <div class="text-center mb-10">
         <div class="inline-flex items-center gap-4 mb-6">
           <div class="p-2 bg-primary rounded-2xl shadow-xl">
-            <img src="/logo.svg" class="w-14 h-14 block" alt="Logo" />
+            <div class="w-14 h-14 bg-primary-content" style="-webkit-mask-image: url('/logo.svg'); mask-image: url('/logo.svg'); -webkit-mask-size: contain; mask-size: contain; -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat; -webkit-mask-position: center; mask-position: center;" role="img" aria-label="Logo"></div>
           </div>
         </div>
         <h1 class="text-3xl font-black italic tracking-tighter bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
