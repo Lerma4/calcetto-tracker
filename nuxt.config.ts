@@ -1,9 +1,13 @@
 import pkg from './package.json'
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  modules: ['@nuxtjs/tailwindcss', '@nuxt/icon', '@nuxtjs/color-mode'],
+  modules: ['@nuxt/icon', '@nuxtjs/color-mode'],
+  vite: {
+    plugins: [tailwindcss()],
+  },
   app: {
     head: {
       link: [

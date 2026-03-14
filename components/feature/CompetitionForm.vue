@@ -25,13 +25,13 @@ const handleSubmit = () => {
      </div>
      <div class="card-body p-8 gap-8 mt-4">
        <form @submit.prevent="handleSubmit" class="space-y-6">
-          <div class="form-control group">
+          <div class="group">
             <label class="label pb-1"><span class="label-text font-black text-[10px] uppercase tracking-widest opacity-40 group-focus-within:opacity-100 group-focus-within:text-secondary transition-all">Nome Torneo</span></label>
-            <input v-model="comp.name" type="text" placeholder="..." class="input input-lg bg-base-200 bg-opacity-50 rounded-2xl border-none font-bold" required />
+            <input v-model="comp.name" type="text" placeholder="..." class="input input-lg bg-base-200/50 rounded-2xl border-none font-bold" required />
           </div>
-          <div class="form-control">
+          <div class="">
             <label class="label pb-1"><span class="label-text font-black text-[10px] uppercase tracking-widest opacity-40">Punti / Vittoria</span></label>
-            <input v-model.number="comp.winPoints" type="number" class="input input-lg bg-base-200 bg-opacity-50 rounded-2xl border-none font-black text-secondary" required />
+            <input v-model.number="comp.winPoints" type="number" class="input input-lg bg-base-200/50 rounded-2xl border-none font-black text-secondary" required />
           </div>
 
           <button type="submit" class="btn btn-secondary btn-lg rounded-2xl w-full shadow-2xl transform active:scale-95 transition-all text-xs font-black tracking-[0.2em] uppercase" :disabled="loading">
