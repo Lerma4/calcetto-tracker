@@ -8,8 +8,4 @@ export default <Config>{
     './plugins/**/*.{js,ts}',
     './nuxt.config.{js,ts}',
   ],
-  plugins: [require('daisyui')],
-  daisyui: {
-    themes: ["cupcake", "dracula", "emerald", "cyberpunk", "lofi", "caramellatte"],
-  },
 }
