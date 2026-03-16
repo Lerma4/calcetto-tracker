@@ -50,12 +50,39 @@ const handleAdd = async () => {
 
     <!-- Active Tournaments -->
     <div class="card bg-base-100 rounded-[3rem] shadow-2xl border-2 border-base-200 overflow-hidden">
-         <div class="p-10 border-b border-base-200 bg-base-100 flex items-center justify-between">
-            <h2 class="text-3xl font-black uppercase tracking-tighter italic">I Tornei Attivi</h2>
-            <div class="badge badge-lg bg-secondary/10 text-secondary border-none font-black text-xs px-6">SCANSIONE LIVE</div>
+         <div class="p-6 md:p-10 border-b border-base-200 bg-base-100 flex items-center justify-between gap-3">
+            <h2 class="text-xl md:text-3xl font-black uppercase tracking-tighter italic">I Tornei Attivi</h2>
+            <div class="badge badge-lg bg-secondary/10 text-secondary border-none font-black text-[10px] md:text-xs px-4 md:px-6 shrink-0">SCANSIONE LIVE</div>
          </div>
          <div class="card-body p-0">
-             <div v-if="competitions && competitions.length > 0" class="overflow-x-auto">
+             <div v-if="competitions && competitions.length > 0">
+                 <!-- Mobile: card layout -->
+                 <div class="md:hidden divide-y divide-base-200">
+                    <div v-for="comp in competitions" :key="'m-' + comp.id" class="p-6 space-y-4">
+                       <div class="flex items-center gap-4">
+                          <div class="w-14 h-14 shrink-0 rounded-2xl bg-primary/10 text-primary flex items-center justify-center font-black text-xl shadow-inner">
+                             {{ comp.name.charAt(0) }}
+                          </div>
+                          <div class="min-w-0">
+                             <div class="text-xl font-black tracking-tight truncate">{{ comp.name }}</div>
+                             <div class="flex flex-wrap items-center gap-2 mt-1">
+                                <span class="badge badge-sm border-2 border-secondary/30 text-secondary font-black text-[10px] py-3 px-3 rounded-xl">
+                                   {{ comp.winPoints }} PT / WIN
+                                </span>
+                                <span class="text-[10px] opacity-40 font-bold uppercase tracking-widest">
+                                   {{ new Date(comp.createdAt).toLocaleDateString() }}
+                                </span>
+                             </div>
+                          </div>
+                       </div>
+                       <NuxtLink :to="`/tornei/${comp.id}`" class="btn btn-secondary btn-block rounded-2xl font-black text-xs tracking-widest shadow-lg active:scale-95 transition-all uppercase h-14 text-base">
+                          {{ canEdit ? 'Gestisci ⚡' : 'Visualizza' }}
+                       </NuxtLink>
+                    </div>
+                 </div>
+
+                 <!-- Desktop: table layout -->
+                 <div class="hidden md:block overflow-x-auto">
                  <table class="table table-lg w-full">
                     <thead>
                       <tr class="bg-base-200 text-[10px] font-black uppercase tracking-widest opacity-40 border-b border-base-200">
@@ -94,6 +121,7 @@ const handleAdd = async () => {
                       </tr>
                     </tbody>
                  </table>
+                 </div>
              </div>
              <div v-else class="p-10 text-center opacity-40 font-bold">
                 Nessun torneo creato.
