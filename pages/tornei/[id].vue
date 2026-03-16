@@ -156,11 +156,15 @@ const handleStartManualCalendar = async () => {
 // Match results - local scores for editing
 const localScores = ref<Record<number, { score1: number | null; score2: number | null }>>({})
 
-const getScores = (matchId: number, defaultScore1: number | null, defaultScore2: number | null) => {
-  if (!localScores.value[matchId]) {
-    localScores.value[matchId] = { score1: defaultScore1, score2: defaultScore2 }
+const getScores = (match: { id: number; score1: number; score2: number; state: string }) => {
+  if (!localScores.value[match.id]) {
+    const isPlayed = match.state === 'played'
+    localScores.value[match.id] = {
+      score1: isPlayed ? match.score1 : null,
+      score2: isPlayed ? match.score2 : null,
+    }
   }
-  return localScores.value[matchId]
+  return localScores.value[match.id]!
 }
 
 const handleSaveResult = async (matchId: number) => {
@@ -175,6 +179,23 @@ const handleSaveResult = async (matchId: number) => {
     errorMsg.value = e.data?.statusMessage || 'Errore salvataggio risultato'
     setTimeout(() => errorMsg.value = '', 4000)
   }
+}
+
+// Mobile score editing modal
+const mobileEditMatch = ref<{ id: number; team1Id: number; team2Id: number; score1: number; score2: number; state: string } | null>(null)
+const mobileEditModalRef = ref<HTMLDialogElement | null>(null)
+
+const openMobileEdit = (match: { id: number; team1Id: number; team2Id: number; score1: number; score2: number; state: string }) => {
+  mobileEditMatch.value = match
+  getScores(match)
+  mobileEditModalRef.value?.showModal()
+}
+
+const handleMobileSave = async () => {
+  if (!mobileEditMatch.value) return
+  await handleSaveResult(mobileEditMatch.value.id)
+  mobileEditModalRef.value?.close()
+  mobileEditMatch.value = null
 }
 
 // Matches grouped by matchday
@@ -661,15 +682,20 @@ const handleSaveMatchTeams = async (matchId: number) => {
                     </div>
                     <div class="flex items-center gap-1 sm:gap-3 px-1 sm:px-2 shrink-0">
                       <template v-if="canEdit">
+                        <!-- Desktop: inline inputs -->
                         <input type="number" min="0"
-                          class="input input input-sm rounded-lg w-12 sm:w-16 text-center font-black"
-                          :value="getScores(match.id, match.score1, match.score2).score1"
-                          @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score1: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
-                        <span class="font-black opacity-30 text-xs">vs</span>
+                          class="hidden sm:block input input input-sm rounded-lg w-16 text-center font-black"
+                          :value="getScores(match).score1"
+                          @input="localScores[match.id] = { ...getScores(match), score1: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
+                        <span class="hidden sm:inline font-black opacity-30 text-xs">vs</span>
                         <input type="number" min="0"
-                          class="input input input-sm rounded-lg w-12 sm:w-16 text-center font-black"
-                          :value="getScores(match.id, match.score1, match.score2).score2"
-                          @input="localScores[match.id] = { ...getScores(match.id, match.score1, match.score2), score2: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
+                          class="hidden sm:block input input input-sm rounded-lg w-16 text-center font-black"
+                          :value="getScores(match).score2"
+                          @input="localScores[match.id] = { ...getScores(match), score2: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
+                        <!-- Mobile: read-only scores -->
+                        <span class="sm:hidden font-black text-lg tabular-nums w-6 text-center">{{ getScores(match).score1 ?? '-' }}</span>
+                        <span class="sm:hidden font-black opacity-20 text-[10px]">VS</span>
+                        <span class="sm:hidden font-black text-lg tabular-nums w-6 text-center">{{ getScores(match).score2 ?? '-' }}</span>
                       </template>
                       <template v-else>
                         <span class="font-black text-lg sm:text-xl tabular-nums w-6 sm:w-8 text-center">{{ match.score1 ?? '-' }}</span>
@@ -683,8 +709,8 @@ const handleSaveMatchTeams = async (matchId: number) => {
                     </div>
                   </div>
 
-                  <!-- Action buttons (admin only) -->
-                  <div v-if="canEdit" class="flex items-center gap-1 justify-end shrink-0">
+                  <!-- Action buttons (admin only) — desktop inline -->
+                  <div v-if="canEdit" class="hidden sm:flex items-center gap-1 justify-end shrink-0">
                     <button @click="handleSaveResult(match.id)" class="btn btn-primary btn-sm btn-square rounded-lg font-bold">
                       <Icon name="lucide:save" class="w-4 h-4" />
                     </button>
@@ -696,6 +722,12 @@ const handleSaveMatchTeams = async (matchId: number) => {
                     </button>
                   </div>
                 </div>
+
+                <!-- Mobile: full-width edit button on its own row -->
+                <button v-if="canEdit" @click="openMobileEdit(match)" class="sm:hidden btn btn-primary btn-sm rounded-xl w-full mt-2 font-bold tracking-widest gap-2">
+                  <Icon name="lucide:pencil" class="w-4 h-4" />
+                  Modifica Risultato
+                </button>
               </template>
 
               <template v-else>
@@ -832,6 +864,54 @@ const handleSaveMatchTeams = async (matchId: number) => {
             <span v-if="isDeletingComp" class="loading loading-spinner loading-sm"></span>
             ELIMINA
           </button>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
+
+    <!-- Mobile Score Edit Modal -->
+    <dialog ref="mobileEditModalRef" class="modal">
+      <div class="modal-box rounded-3xl">
+        <h3 class="text-lg font-black uppercase tracking-widest mb-6">Modifica Risultato</h3>
+        <div v-if="mobileEditMatch" class="space-y-6">
+          <div class="flex items-center gap-3">
+            <div class="flex-1 text-center">
+              <div class="font-black text-base truncate">{{ teamName(mobileEditMatch.team1Id) }}</div>
+              <div class="text-[10px] font-bold uppercase tracking-wider opacity-40 truncate">{{ teamSubtitle(mobileEditMatch.team1Id) }}</div>
+            </div>
+            <span class="font-black opacity-30 text-sm shrink-0">VS</span>
+            <div class="flex-1 text-center">
+              <div class="font-black text-base truncate">{{ teamName(mobileEditMatch.team2Id) }}</div>
+              <div class="text-[10px] font-bold uppercase tracking-wider opacity-40 truncate">{{ teamSubtitle(mobileEditMatch.team2Id) }}</div>
+            </div>
+          </div>
+          <div class="flex items-center justify-center gap-4">
+            <input type="number" min="0"
+              class="input input-bordered rounded-xl w-20 text-center font-black text-2xl"
+              :value="getScores(mobileEditMatch).score1"
+              @input="localScores[mobileEditMatch!.id] = { ...getScores(mobileEditMatch!), score1: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
+            <span class="font-black opacity-30 text-lg">-</span>
+            <input type="number" min="0"
+              class="input input-bordered rounded-xl w-20 text-center font-black text-2xl"
+              :value="getScores(mobileEditMatch).score2"
+              @input="localScores[mobileEditMatch!.id] = { ...getScores(mobileEditMatch!), score2: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
+          </div>
+          <div class="flex flex-col gap-2">
+            <button @click="handleMobileSave" class="btn btn-primary rounded-xl font-black tracking-widest w-full">
+              <Icon name="lucide:save" class="w-4 h-4" />
+              SALVA RISULTATO
+            </button>
+            <div class="flex gap-2">
+              <button @click="startEditMatch(mobileEditMatch!); mobileEditModalRef?.close()" class="btn btn-ghost btn-sm rounded-xl flex-1">
+                <Icon name="lucide:pencil" class="w-4 h-4" />
+                Modifica Squadre
+              </button>
+              <button @click="handleDeleteMatch(mobileEditMatch!.id); mobileEditModalRef?.close(); mobileEditMatch = null" class="btn btn-ghost btn-sm text-error rounded-xl flex-1">
+                <Icon name="lucide:trash-2" class="w-4 h-4" />
+                Elimina
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       <form method="dialog" class="modal-backdrop"><button>close</button></form>
