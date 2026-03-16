@@ -752,9 +752,9 @@ const handleSaveMatchTeams = async (matchId: number) => {
                         </div>
                       </template>
                       <template v-else>
-                        <span class="font-black text-lg sm:text-xl tabular-nums w-6 sm:w-8 text-center">{{ match.score1 ?? '-' }}</span>
+                        <span class="font-black text-lg sm:text-xl tabular-nums w-6 sm:w-8 text-center">{{ match.state === 'played' ? match.score1 : '-' }}</span>
                         <span class="font-black opacity-20 text-[10px] sm:text-xs">VS</span>
-                        <span class="font-black text-lg sm:text-xl tabular-nums w-6 sm:w-8 text-center">{{ match.score2 ?? '-' }}</span>
+                        <span class="font-black text-lg sm:text-xl tabular-nums w-6 sm:w-8 text-center">{{ match.state === 'played' ? match.score2 : '-' }}</span>
                       </template>
                     </div>
                     <div class="flex-1 min-w-0">
