@@ -368,6 +368,47 @@ const handleDeleteCompetition = async () => {
 const editingMatchId = ref<number | null>(null)
 const editMatch = ref({ team1Id: 0, team2Id: 0 })
 
+// Search
+const searchTeams = ref('')
+const searchCalendar = ref('')
+
+const matchesSearch = (text: string, query: string) => {
+  return text.toLowerCase().includes(query.toLowerCase())
+}
+
+const teamMatchesQuery = (teamId: number, query: string) => {
+  if (!query) return true
+  const team = competition.value?.teams.find(t => t.id === teamId)
+  if (!team) return false
+  return matchesSearch(team.name, query)
+    || matchesSearch(team.player1.name, query)
+    || matchesSearch(team.player1.surname, query)
+    || matchesSearch(team.player1.nickname || '', query)
+    || matchesSearch(team.player2.name, query)
+    || matchesSearch(team.player2.surname, query)
+    || matchesSearch(team.player2.nickname || '', query)
+}
+
+const filteredTeams = computed(() => {
+  const teams = competition.value?.teams || []
+  if (!searchTeams.value) return teams
+  return teams.filter(t => teamMatchesQuery(t.id, searchTeams.value))
+})
+
+const filteredMatchesByDay = computed(() => {
+  const matches = competition.value?.matches || []
+  if (!searchCalendar.value) return matchesByDay.value
+  const filtered = matches.filter(m =>
+    teamMatchesQuery(m.team1Id, searchCalendar.value) || teamMatchesQuery(m.team2Id, searchCalendar.value)
+  )
+  const grouped: Record<number, typeof filtered> = {}
+  for (const m of filtered) {
+    if (!grouped[m.matchday]) grouped[m.matchday] = []
+    grouped[m.matchday]!.push(m)
+  }
+  return grouped
+})
+
 // Standings mobile expand
 const expandedStandingId = ref<number | null>(null)
 const toggleStanding = (teamId: number) => {
@@ -574,9 +615,15 @@ const handleSaveMatchTeams = async (matchId: number) => {
 
     <!-- Calendar Section -->
     <div class="glass-card rounded-[2rem] p-4 sm:p-6 md:p-8">
-      <h2 class="text-base sm:text-lg font-black uppercase tracking-widest opacity-60 mb-4 sm:mb-6">
-        <Icon name="lucide:calendar" class="inline w-5 h-5 mr-2" />Calendario
-      </h2>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+        <h2 class="text-base sm:text-lg font-black uppercase tracking-widest opacity-60">
+          <Icon name="lucide:calendar" class="inline w-5 h-5 mr-2" />Calendario
+        </h2>
+        <div v-if="hasCalendar" class="relative w-full sm:w-64">
+          <Icon name="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+          <input v-model="searchCalendar" type="text" placeholder="Cerca squadra o giocatore..." class="input input-sm rounded-xl w-full pl-9" />
+        </div>
+      </div>
 
       <!-- Mode Selection (no matches yet, no mode chosen) -->
       <div v-if="!hasCalendar && !competition?.calendarMode && canCreate" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -656,7 +703,10 @@ const handleSaveMatchTeams = async (matchId: number) => {
 
       <!-- Match Days -->
       <div v-if="hasCalendar" class="space-y-6">
-        <div v-for="(dayMatches, day) in matchesByDay" :key="day">
+        <div v-if="searchCalendar && !Object.keys(filteredMatchesByDay).length" class="text-center opacity-40 py-4 font-bold">
+          Nessun risultato per "{{ searchCalendar }}"
+        </div>
+        <div v-for="(dayMatches, day) in filteredMatchesByDay" :key="day">
           <h3 class="text-sm font-black uppercase tracking-[0.3em] opacity-40 mb-3">Giornata {{ day }}</h3>
           <div class="space-y-2">
             <div v-for="match in dayMatches" :key="match.id"
@@ -761,9 +811,15 @@ const handleSaveMatchTeams = async (matchId: number) => {
 
     <!-- Teams Section -->
     <div class="glass-card rounded-[2rem] p-4 sm:p-6 md:p-8">
-      <h2 class="text-base sm:text-lg font-black uppercase tracking-widest opacity-60 mb-4 sm:mb-6">
-        <Icon name="lucide:users" class="inline w-5 h-5 mr-2" />Squadre ({{ competition?.teams?.length || 0 }})
-      </h2>
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+        <h2 class="text-base sm:text-lg font-black uppercase tracking-widest opacity-60">
+          <Icon name="lucide:users" class="inline w-5 h-5 mr-2" />Squadre ({{ competition?.teams?.length || 0 }})
+        </h2>
+        <div v-if="(competition?.teams?.length || 0) > 0" class="relative w-full sm:w-64">
+          <Icon name="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+          <input v-model="searchTeams" type="text" placeholder="Cerca squadra o giocatore..." class="input input-sm rounded-xl w-full pl-9" />
+        </div>
+      </div>
 
       <!-- Add Team Form (only if no calendar yet) -->
       <form v-if="!hasCalendar && canCreate" @submit.prevent="handleAddTeam" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -784,7 +840,10 @@ const handleSaveMatchTeams = async (matchId: number) => {
 
       <!-- Teams List -->
       <div class="space-y-2">
-        <div v-for="team in competition?.teams" :key="team.id"
+        <div v-if="searchTeams && !filteredTeams.length" class="text-center opacity-40 py-4 font-bold">
+          Nessun risultato per "{{ searchTeams }}"
+        </div>
+        <div v-for="team in filteredTeams" :key="team.id"
           class="bg-base-200 rounded-xl p-3 sm:p-4">
           <template v-if="editingTeamId !== team.id">
             <div class="flex items-center justify-between gap-2">
@@ -833,7 +892,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
             </div>
           </template>
         </div>
-        <div v-if="!competition?.teams?.length" class="text-center opacity-40 py-4 font-bold">
+        <div v-if="!competition?.teams?.length && !searchTeams" class="text-center opacity-40 py-4 font-bold">
           Nessuna squadra inserita
         </div>
       </div>
