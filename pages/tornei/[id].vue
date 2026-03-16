@@ -80,6 +80,55 @@ const handleDeleteTeam = async (teamId: number) => {
   }
 }
 
+// Team editing
+const editingTeamId = ref<number | null>(null)
+const editTeam = ref({ name: '', player1Id: 0, player2Id: 0 })
+const editTeamNameManual = ref(false)
+const isSavingTeam = ref(false)
+
+const availablePlayersForEdit = (teamId: number) => {
+  const currentTeam = competition.value?.teams.find(t => t.id === teamId)
+  const otherTeamPlayerIds = new Set<number>()
+  for (const t of competition.value?.teams || []) {
+    if (t.id === teamId) continue
+    otherTeamPlayerIds.add(t.player1Id)
+    otherTeamPlayerIds.add(t.player2Id)
+  }
+  return activePlayers.value.filter(p => !otherTeamPlayerIds.has(p.id))
+}
+
+const startEditTeam = (team: { id: number; name: string; player1Id: number; player2Id: number }) => {
+  editingTeamId.value = team.id
+  editTeam.value = { name: team.name, player1Id: team.player1Id, player2Id: team.player2Id }
+  editTeamNameManual.value = true
+}
+
+watch(() => [editTeam.value.player1Id, editTeam.value.player2Id], ([p1, p2]) => {
+  if (!editTeamNameManual.value && p1 && p2) {
+    editTeam.value.name = `${playerLabel(p1)} & ${playerLabel(p2)}`
+  }
+})
+
+const handleSaveTeam = async (teamId: number) => {
+  if (!editTeam.value.name || !editTeam.value.player1Id || !editTeam.value.player2Id) return
+  errorMsg.value = ''
+  isSavingTeam.value = true
+  try {
+    await $fetch(`/api/competitions/${compId}/teams/${teamId}`, { method: 'PUT', body: editTeam.value })
+    editingTeamId.value = null
+    await refresh()
+  } catch (e: any) {
+    errorMsg.value = e.data?.statusMessage || 'Errore nella modifica della squadra'
+    setTimeout(() => errorMsg.value = '', 4000)
+  } finally {
+    isSavingTeam.value = false
+  }
+}
+
+const cancelEditTeam = () => {
+  editingTeamId.value = null
+}
+
 // Calendar
 const canGenerateCalendar = computed(() => {
   const teams = competition.value?.teams || []
@@ -88,6 +137,11 @@ const canGenerateCalendar = computed(() => {
 })
 
 const hasCalendar = computed(() => (competition.value?.matches || []).length > 0)
+
+const isCompetitionComplete = computed(() => {
+  const allMatches = competition.value?.matches || []
+  return allMatches.length > 0 && allMatches.every(m => m.state === 'played')
+})
 
 const handleGenerateCalendar = async () => {
   await $fetch(`/api/competitions/${compId}/generate-calendar`, { method: 'POST' })
@@ -695,18 +749,53 @@ const handleSaveMatchTeams = async (matchId: number) => {
       <!-- Teams List -->
       <div class="space-y-2">
         <div v-for="team in competition?.teams" :key="team.id"
-          class="flex items-center justify-between gap-2 bg-base-200 rounded-xl p-3 sm:p-4">
-          <div class="min-w-0">
-            <div class="font-black text-base sm:text-lg truncate">{{ team.name }}</div>
-            <div class="text-xs sm:text-sm opacity-50 truncate">
-              {{ team.player1.name }} {{ team.player1.surname }}<template v-if="team.player1.nickname"> ({{ team.player1.nickname }})</template>
-              &amp;
-              {{ team.player2.name }} {{ team.player2.surname }}<template v-if="team.player2.nickname"> ({{ team.player2.nickname }})</template>
+          class="bg-base-200 rounded-xl p-3 sm:p-4">
+          <template v-if="editingTeamId !== team.id">
+            <div class="flex items-center justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-black text-base sm:text-lg truncate">{{ team.name }}</div>
+                <div class="text-xs sm:text-sm opacity-50 truncate">
+                  {{ team.player1.name }} {{ team.player1.surname }}<template v-if="team.player1.nickname"> ({{ team.player1.nickname }})</template>
+                  &amp;
+                  {{ team.player2.name }} {{ team.player2.surname }}<template v-if="team.player2.nickname"> ({{ team.player2.nickname }})</template>
+                </div>
+              </div>
+              <div v-if="canEdit" class="flex items-center gap-1 shrink-0">
+                <button v-if="!isCompetitionComplete" @click="startEditTeam(team)" class="btn btn-ghost btn-sm btn-square rounded-lg">
+                  <Icon name="lucide:pencil" class="w-4 h-4" />
+                </button>
+                <button v-if="!hasCalendar && canDelete" @click="handleDeleteTeam(team.id)" class="btn btn-ghost btn-sm btn-square text-error rounded-lg">
+                  <Icon name="lucide:trash-2" class="w-4 h-4" />
+                </button>
+              </div>
             </div>
-          </div>
-          <button v-if="!hasCalendar && canDelete" @click="handleDeleteTeam(team.id)" class="btn btn-ghost btn-sm btn-square text-error rounded-lg shrink-0">
-            <Icon name="lucide:trash-2" class="w-4 h-4" />
-          </button>
+          </template>
+          <template v-else>
+            <div class="space-y-3">
+              <input v-model="editTeam.name" @input="editTeamNameManual = true" type="text" placeholder="Nome squadra" class="input input w-full rounded-xl" required />
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <select v-model.number="editTeam.player1Id" class="select select rounded-xl" required>
+                  <option :value="0" disabled>Giocatore 1</option>
+                  <option v-for="p in availablePlayersForEdit(team.id).filter(p => p.id !== editTeam.player2Id)" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
+                </select>
+                <select v-model.number="editTeam.player2Id" class="select select rounded-xl" required>
+                  <option :value="0" disabled>Giocatore 2</option>
+                  <option v-for="p in availablePlayersForEdit(team.id).filter(p => p.id !== editTeam.player1Id)" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
+                </select>
+              </div>
+              <div class="flex gap-2 justify-end">
+                <button @click="handleSaveTeam(team.id)" class="btn btn-success btn-sm rounded-xl font-bold" :disabled="isSavingTeam">
+                  <span v-if="isSavingTeam" class="loading loading-spinner loading-sm"></span>
+                  <Icon v-else name="lucide:check" class="w-4 h-4" />
+                  Salva
+                </button>
+                <button @click="cancelEditTeam" class="btn btn-ghost btn-sm rounded-xl">
+                  <Icon name="lucide:x" class="w-4 h-4" />
+                  Annulla
+                </button>
+              </div>
+            </div>
+          </template>
         </div>
         <div v-if="!competition?.teams?.length" class="text-center opacity-40 py-4 font-bold">
           Nessuna squadra inserita
