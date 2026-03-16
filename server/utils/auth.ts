@@ -9,7 +9,7 @@ import type { H3Event } from 'h3';
 export async function requireAuth(event: H3Event) {
   const token = getCookie(event, 'auth-token');
   if (!token) {
-    throw createError({ statusCode: 401, statusMessage: 'Non autenticato' });
+    throw createError({ statusCode: 401, message: 'Non autenticato' });
   }
 
   const session = db
@@ -19,7 +19,7 @@ export async function requireAuth(event: H3Event) {
     .get();
 
   if (!session) {
-    throw createError({ statusCode: 401, statusMessage: 'Sessione non valida' });
+    throw createError({ statusCode: 401, message: 'Sessione non valida' });
   }
 
   const user = db
@@ -29,7 +29,7 @@ export async function requireAuth(event: H3Event) {
     .get();
 
   if (!user) {
-    throw createError({ statusCode: 401, statusMessage: 'Utente non trovato' });
+    throw createError({ statusCode: 401, message: 'Utente non trovato' });
   }
 
   return user;

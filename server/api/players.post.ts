@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!body.name || !body.surname) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Name and surname are required',
+      message: 'Name and surname are required',
     });
   }
 

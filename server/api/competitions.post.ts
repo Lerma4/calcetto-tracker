@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   if (!body.name) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Name is required',
+      message: 'Name is required',
     });
   }
 

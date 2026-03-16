@@ -7,11 +7,11 @@ export default defineEventHandler(async (event) => {
 
   const comp = await db.select().from(competitions).where(eq(competitions.id, competitionId)).limit(1);
   if (!comp.length) {
-    throw createError({ statusCode: 404, statusMessage: 'Competition not found' });
+    throw createError({ statusCode: 404, message: 'Competition not found' });
   }
 
   if (comp[0].calendarMode === 'manual') {
-    throw createError({ statusCode: 400, statusMessage: 'Questa arena usa il calendario manuale' });
+    throw createError({ statusCode: 400, message: 'Questa arena usa il calendario manuale' });
   }
 
   const existingMatches = await db.select({ id: matches.id })
@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     .limit(1);
 
   if (existingMatches.length > 0) {
-    throw createError({ statusCode: 400, statusMessage: 'Il calendario è già stato generato' });
+    throw createError({ statusCode: 400, message: 'Il calendario è già stato generato' });
   }
 
   const compTeams = await db.select().from(teams).where(eq(teams.competitionId, competitionId));
@@ -28,7 +28,7 @@ export default defineEventHandler(async (event) => {
   if (compTeams.length < 2 || compTeams.length % 2 !== 0) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Serve un numero pari di squadre (minimo 2) per generare il calendario',
+      message: 'Serve un numero pari di squadre (minimo 2) per generare il calendario',
     });
   }
 

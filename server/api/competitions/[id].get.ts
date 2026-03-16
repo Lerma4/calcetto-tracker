@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const comp = await db.select().from(competitions).where(eq(competitions.id, id)).limit(1);
 
   if (!comp.length) {
-    throw createError({ statusCode: 404, statusMessage: 'Competition not found' });
+    throw createError({ statusCode: 404, message: 'Competition not found' });
   }
 
   const compTeams = await db.select().from(teams).where(eq(teams.competitionId, id));

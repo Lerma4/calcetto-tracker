@@ -7,16 +7,16 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
 
   if (!body.name || !body.player1Id || !body.player2Id) {
-    throw createError({ statusCode: 400, statusMessage: 'Name, player1Id and player2Id are required' });
+    throw createError({ statusCode: 400, message: 'Name, player1Id and player2Id are required' });
   }
 
   if (body.player1Id === body.player2Id) {
-    throw createError({ statusCode: 400, statusMessage: 'I due giocatori devono essere diversi' });
+    throw createError({ statusCode: 400, message: 'I due giocatori devono essere diversi' });
   }
 
   const comp = await db.select().from(competitions).where(eq(competitions.id, competitionId)).limit(1);
   if (!comp.length) {
-    throw createError({ statusCode: 404, statusMessage: 'Competition not found' });
+    throw createError({ statusCode: 404, message: 'Competition not found' });
   }
 
   const existingTeams = await db.select().from(teams).where(eq(teams.competitionId, competitionId));
@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
       const p = playerRecord[0];
       throw createError({
         statusCode: 400,
-        statusMessage: `Il giocatore ${p.name} ${p.surname} è già in una squadra in questa arena`,
+        message: `Il giocatore ${p.name} ${p.surname} è già in una squadra in questa arena`,
       });
     }
   }

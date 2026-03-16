@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
   if (!body.newPassword || body.newPassword.length < 4) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'La nuova password deve avere almeno 4 caratteri',
+      message: 'La nuova password deve avere almeno 4 caratteri',
     });
   }
 

@@ -7,13 +7,13 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
 
   if (body.score1 == null || body.score2 == null) {
-    throw createError({ statusCode: 400, statusMessage: 'score1 e score2 sono richiesti' });
+    throw createError({ statusCode: 400, message: 'score1 e score2 sono richiesti' });
   }
 
   // Verify the match exists and get its competition context
   const [existing] = await db.select().from(matches).where(eq(matches.id, id));
   if (!existing) {
-    throw createError({ statusCode: 404, statusMessage: 'Partita non trovata' });
+    throw createError({ statusCode: 404, message: 'Partita non trovata' });
   }
 
   const updated = await db.update(matches)

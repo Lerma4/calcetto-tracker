@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
 
   if (!body.name || !body.surname) {
-    throw createError({ statusCode: 400, statusMessage: 'Name and surname are required' });
+    throw createError({ statusCode: 400, message: 'Name and surname are required' });
   }
 
   const updated = await db.update(players)
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     .returning();
 
   if (!updated.length) {
-    throw createError({ statusCode: 404, statusMessage: 'Player not found' });
+    throw createError({ statusCode: 404, message: 'Player not found' });
   }
   return updated[0];
 });

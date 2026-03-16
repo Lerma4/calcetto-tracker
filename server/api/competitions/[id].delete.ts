@@ -7,7 +7,7 @@ export default defineEventHandler(async (event) => {
 
   const [comp] = await db.select().from(competitions).where(eq(competitions.id, competitionId));
   if (!comp) {
-    throw createError({ statusCode: 404, statusMessage: 'Torneo non trovato' });
+    throw createError({ statusCode: 404, message: 'Torneo non trovato' });
   }
 
   // Delete in order: matches → teams → competition

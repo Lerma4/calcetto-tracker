@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const token = getCookie(event, 'auth-token');
 
   if (!token) {
-    throw createError({ statusCode: 401, statusMessage: 'Non autenticato' });
+    throw createError({ statusCode: 401, message: 'Non autenticato' });
   }
 
   const session = db
@@ -16,7 +16,7 @@ export default defineEventHandler(async (event) => {
     .get();
 
   if (!session) {
-    throw createError({ statusCode: 401, statusMessage: 'Sessione non valida' });
+    throw createError({ statusCode: 401, message: 'Sessione non valida' });
   }
 
   const user = db
@@ -26,7 +26,7 @@ export default defineEventHandler(async (event) => {
     .get();
 
   if (!user) {
-    throw createError({ statusCode: 401, statusMessage: 'Utente non trovato' });
+    throw createError({ statusCode: 401, message: 'Utente non trovato' });
   }
 
   return { ...user, mustChangePassword: !!user.mustChangePassword };

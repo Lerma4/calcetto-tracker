@@ -10,7 +10,7 @@ export default defineEventHandler(async (event) => {
   if (!body.username || !body.password) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Username e password sono obbligatori',
+      message: 'Username e password sono obbligatori',
     });
   }
 
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
   if (!user) {
     throw createError({
       statusCode: 401,
-      statusMessage: 'Credenziali non valide',
+      message: 'Credenziali non valide',
     });
   }
 
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
   if (!valid) {
     throw createError({
       statusCode: 401,
-      statusMessage: 'Credenziali non valide',
+      message: 'Credenziali non valide',
     });
   }
 

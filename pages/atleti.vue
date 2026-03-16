@@ -57,7 +57,7 @@ const handleDelete = async (id: number) => {
     await $fetch(`/api/players/${id}`, { method: 'DELETE' })
     await refresh()
   } catch (e: any) {
-    errorMsg.value = e.data?.statusMessage || 'Errore durante l\'eliminazione'
+    errorMsg.value = e.data?.message || 'Errore durante l\'eliminazione'
     setTimeout(() => errorMsg.value = '', 4000)
   }
 }

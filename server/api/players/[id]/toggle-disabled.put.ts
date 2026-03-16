@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const player = await db.select().from(players).where(eq(players.id, id)).limit(1);
 
   if (!player.length) {
-    throw createError({ statusCode: 404, statusMessage: 'Player not found' });
+    throw createError({ statusCode: 404, message: 'Player not found' });
   }
 
   const currentPlayer = player[0]!;

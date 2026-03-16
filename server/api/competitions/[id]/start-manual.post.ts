@@ -7,15 +7,15 @@ export default defineEventHandler(async (event) => {
 
   const [comp] = await db.select().from(competitions).where(eq(competitions.id, competitionId));
   if (!comp) {
-    throw createError({ statusCode: 404, statusMessage: 'Torneo non trovato' });
+    throw createError({ statusCode: 404, message: 'Torneo non trovato' });
   }
 
   if (comp.calendarMode === 'auto') {
-    throw createError({ statusCode: 400, statusMessage: 'Questo torneo usa già il calendario automatico' });
+    throw createError({ statusCode: 400, message: 'Questo torneo usa già il calendario automatico' });
   }
 
   if (comp.calendarMode === 'manual') {
-    throw createError({ statusCode: 400, statusMessage: 'Il calendario manuale è già attivo' });
+    throw createError({ statusCode: 400, message: 'Il calendario manuale è già attivo' });
   }
 
   const existingMatches = await db.select({ id: matches.id })
@@ -24,7 +24,7 @@ export default defineEventHandler(async (event) => {
     .limit(1);
 
   if (existingMatches.length > 0) {
-    throw createError({ statusCode: 400, statusMessage: 'Esistono già partite per questo torneo' });
+    throw createError({ statusCode: 400, message: 'Esistono già partite per questo torneo' });
   }
 
   await db.update(competitions)

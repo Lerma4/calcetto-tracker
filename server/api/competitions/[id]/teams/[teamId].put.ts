@@ -8,11 +8,11 @@ export default defineEventHandler(async (event) => {
   const body = await readBody(event);
 
   if (!body.name || !body.player1Id || !body.player2Id) {
-    throw createError({ statusCode: 400, statusMessage: 'Name, player1Id and player2Id are required' });
+    throw createError({ statusCode: 400, message: 'Name, player1Id and player2Id are required' });
   }
 
   if (body.player1Id === body.player2Id) {
-    throw createError({ statusCode: 400, statusMessage: 'I due giocatori devono essere diversi' });
+    throw createError({ statusCode: 400, message: 'I due giocatori devono essere diversi' });
   }
 
   // Block editing if all matches are played (competition complete)
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
   if (allMatches.length > 0 && allMatches.every(m => m.state === 'played')) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Impossibile modificare: la competizione è già conclusa',
+      message: 'Impossibile modificare: la competizione è già conclusa',
     });
   }
 
@@ -40,7 +40,7 @@ export default defineEventHandler(async (event) => {
       const p = playerRecord[0];
       throw createError({
         statusCode: 400,
-        statusMessage: `Il giocatore ${p.name} ${p.surname} è già in un'altra squadra in questo torneo`,
+        message: `Il giocatore ${p.name} ${p.surname} è già in un'altra squadra in questo torneo`,
       });
     }
   }
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
     .returning();
 
   if (!updated.length) {
-    throw createError({ statusCode: 404, statusMessage: 'Squadra non trovata' });
+    throw createError({ statusCode: 404, message: 'Squadra non trovata' });
   }
 
   return updated[0];

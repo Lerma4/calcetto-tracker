@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
     .returning();
 
   if (!deleted) {
-    throw createError({ statusCode: 404, statusMessage: 'Partita non trovata' });
+    throw createError({ statusCode: 404, message: 'Partita non trovata' });
   }
 
   const remaining = await db.select().from(matches)

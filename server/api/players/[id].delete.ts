@@ -11,12 +11,12 @@ export default defineEventHandler(async (event) => {
     .limit(1);
 
   if (linkedTeams.length > 0) {
-    throw createError({ statusCode: 400, statusMessage: 'Impossibile eliminare: il giocatore è collegato a una o più squadre' });
+    throw createError({ statusCode: 400, message: 'Impossibile eliminare: il giocatore è collegato a una o più squadre' });
   }
 
   const deleted = await db.delete(players).where(eq(players.id, id)).returning();
   if (!deleted.length) {
-    throw createError({ statusCode: 404, statusMessage: 'Player not found' });
+    throw createError({ statusCode: 404, message: 'Player not found' });
   }
   return deleted[0];
 });

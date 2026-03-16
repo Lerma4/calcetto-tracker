@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   if (existingMatches.length > 0) {
     throw createError({
       statusCode: 400,
-      statusMessage: 'Impossibile eliminare: il calendario è già stato generato',
+      message: 'Impossibile eliminare: il calendario è già stato generato',
     });
   }
 
@@ -23,7 +23,7 @@ export default defineEventHandler(async (event) => {
     .returning();
 
   if (!deleted.length) {
-    throw createError({ statusCode: 404, statusMessage: 'Team not found' });
+    throw createError({ statusCode: 404, message: 'Team not found' });
   }
 
   return deleted[0];
