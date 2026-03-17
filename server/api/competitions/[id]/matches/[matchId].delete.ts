@@ -1,6 +1,7 @@
 import { db } from '../../../../database/db';
 import { matches } from '../../../../database/schema';
 import { eq, and } from 'drizzle-orm';
+import { broadcastCompetitionUpdate } from '../../../../utils/ws';
 
 export default defineEventHandler(async (event) => {
   const competitionId = requireIntParam(event, 'id');
@@ -28,6 +29,8 @@ export default defineEventHandler(async (event) => {
         .where(and(eq(matches.competitionId, competitionId), eq(matches.matchday, oldDay)));
     }
   }
+
+  broadcastCompetitionUpdate(competitionId);
 
   return { success: true };
 });

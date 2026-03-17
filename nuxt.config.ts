@@ -38,4 +38,9 @@ export default defineNuxtConfig({
       appVersion: pkg.version,
     },
   },
+  nitro: {
+    experimental: {
+      websocket: true
+    }
+  }
 })

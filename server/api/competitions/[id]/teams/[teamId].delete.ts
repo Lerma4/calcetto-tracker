@@ -1,6 +1,7 @@
 import { db } from '../../../../database/db';
 import { teams, matches } from '../../../../database/schema';
 import { eq } from 'drizzle-orm';
+import { broadcastCompetitionUpdate } from '../../../../utils/ws';
 
 export default defineEventHandler(async (event) => {
   const competitionId = requireIntParam(event, 'id');
@@ -25,6 +26,8 @@ export default defineEventHandler(async (event) => {
   if (!deleted.length) {
     throw createError({ statusCode: 404, message: 'Team not found' });
   }
+
+  broadcastCompetitionUpdate(competitionId);
 
   return deleted[0];
 });

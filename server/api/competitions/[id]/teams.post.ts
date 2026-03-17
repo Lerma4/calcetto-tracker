@@ -1,6 +1,7 @@
 import { db } from '../../../database/db';
 import { teams, competitions, players } from '../../../database/schema';
 import { eq, or } from 'drizzle-orm';
+import { broadcastCompetitionUpdate } from '../../../utils/ws';
 
 export default defineEventHandler(async (event) => {
   const competitionId = requireIntParam(event, 'id');
@@ -40,6 +41,10 @@ export default defineEventHandler(async (event) => {
     player2Id: body.player2Id,
     competitionId,
   }).returning();
+
+  if (newTeam[0]) {
+    broadcastCompetitionUpdate(competitionId);
+  }
 
   return newTeam[0];
 });

@@ -11,12 +11,54 @@ const { data: competition, refresh } = await useFetch<CompetitionDetail>(`/api/c
 const { data: allPlayers } = isLoggedIn.value ? await useFetch<Player[]>('/api/players') : { data: ref(null) }
 
 const isRefreshing = ref(false)
-const handleRefresh = async () => {
-  isRefreshing.value = true
-  localScores.value = {}
+const handleRefresh = async (silent = false) => {
+  if (!silent) isRefreshing.value = true
+  if (!silent) localScores.value = {}
   await refresh()
-  isRefreshing.value = false
+  if (!silent) isRefreshing.value = false
 }
+
+// WebSocket setup
+const ws = ref<WebSocket | null>(null)
+let wsReconnectTimer: ReturnType<typeof setTimeout>
+const connectWs = () => {
+  if (!import.meta.client) return
+  
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const wsUrl = `${protocol}//${window.location.host}/ws`
+  const socket = new WebSocket(wsUrl)
+  
+  socket.onmessage = (event) => {
+    try {
+      const data = JSON.parse(event.data)
+      if (data.type === 'competition_update' && data.competitionId === String(compId)) {
+        // Debounce refresh slightly to avoid spam if multiple updates happen
+        handleRefresh(true)
+      }
+    } catch (e) {
+      console.error('Failed to parse WS message', e)
+    }
+  }
+
+  socket.onclose = () => {
+    // Reconnect after 3s
+    clearTimeout(wsReconnectTimer)
+    wsReconnectTimer = setTimeout(connectWs, 3000)
+  }
+
+  ws.value = socket
+}
+
+onMounted(() => {
+  connectWs()
+})
+
+onUnmounted(() => {
+  clearTimeout(wsReconnectTimer)
+  if (ws.value) {
+    ws.value.close()
+  }
+})
 
 const activePlayers = computed(() => allPlayers.value?.filter(p => !p.disabled) || [])
 
@@ -154,14 +196,18 @@ const handleStartManualCalendar = async () => {
 }
 
 // Match results - local scores for editing
-const localScores = ref<Record<number, { score1: number | null; score2: number | null }>>({})
+const localScores = ref<Record<number, { score1: number | null; score2: number | null; sourceState?: string }>>({})
 
 const getScores = (match: { id: number; score1: number; score2: number; state: string }) => {
-  if (!localScores.value[match.id]) {
+  const current = localScores.value[match.id]
+  const serverStateSignature = `${match.state}-${match.score1}-${match.score2}`
+  
+  if (!current || current.sourceState !== serverStateSignature) {
     const isPlayed = match.state === 'played'
     localScores.value[match.id] = {
       score1: isPlayed ? match.score1 : null,
       score2: isPlayed ? match.score2 : null,
+      sourceState: serverStateSignature
     }
   }
   return localScores.value[match.id]!
@@ -415,14 +461,18 @@ const toggleStanding = (teamId: number) => {
   expandedStandingId.value = expandedStandingId.value === teamId ? null : teamId
 }
 
-const handleDeleteMatch = async (matchId: number) => {
-  if (!confirm('Eliminare questa partita?')) return
+const handleResetMatch = async (matchId: number) => {
+  if (!confirm('Vuoi azzerare il risultato di questa partita?')) return
   errorMsg.value = ''
   try {
-    await $fetch(`/api/competitions/${compId}/matches/${matchId}`, { method: 'DELETE' })
-    await refresh()
+    // Aggiorniamo la partita con punteggi nulli per riportarla a 'pending'
+    await $fetch(`/api/matches/${matchId}`, {
+      method: 'PUT',
+      body: { score1: null, score2: null }
+    })
+    await handleRefresh(true) // Silent refresh
   } catch (e: any) {
-    errorMsg.value = e.data?.message || 'Errore nell\'eliminazione della partita'
+    errorMsg.value = e.data?.message || 'Errore durante il reset della partita'
     setTimeout(() => errorMsg.value = '', 4000)
   }
 }
@@ -464,7 +514,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
         <p class="text-[10px] sm:text-xs font-bold opacity-40 uppercase tracking-[0.3em]">Dettaglio Torneo</p>
       </div>
       <div class="flex items-center gap-2 shrink-0">
-        <button @click="handleRefresh" class="btn btn-ghost btn-circle btn-sm sm:btn-md rounded-2xl" :disabled="isRefreshing" title="Aggiorna dati">
+        <button @click="() => handleRefresh(false)" class="btn btn-ghost btn-circle btn-sm sm:btn-md rounded-2xl" :disabled="isRefreshing" title="Aggiorna dati">
           <Icon name="lucide:refresh-cw" class="w-4 h-4 sm:w-5 sm:h-5 transition-transform" :class="{ 'animate-spin': isRefreshing }" />
         </button>
         <button v-if="canDelete" @click="openDeleteModal" class="btn btn-ghost btn-circle btn-sm sm:btn-md rounded-2xl text-error" title="Elimina torneo">
@@ -529,7 +579,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
             <th class="pr-3 md:pr-4">PT</th>
           </tr>
         </thead>
-        <tbody>
+        <TransitionGroup tag="tbody" name="list">
           <template v-for="(row, idx) in standings" :key="row.team.id">
             <tr
               class="group/row transition-all duration-300 hover:bg-base-200 md:cursor-default cursor-pointer"
@@ -571,8 +621,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
                 </div>
               </td>
             </tr>
-            <!-- Mobile expanded detail row -->
-            <tr v-if="expandedStandingId === row.team.id" class="md:hidden">
+            <tr v-if="expandedStandingId === row.team.id" :key="row.team.id + '-expanded'" class="md:hidden">
               <td :colspan="3" class="px-3 pb-3 pt-0">
                 <div class="grid grid-cols-4 gap-2 bg-base-200 rounded-xl p-3 text-center">
                   <div>
@@ -609,7 +658,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
               </td>
             </tr>
           </template>
-        </tbody>
+        </TransitionGroup>
       </table>
     </div>
 
@@ -771,8 +820,11 @@ const handleSaveMatchTeams = async (matchId: number) => {
                     <button @click="startEditMatch(match)" class="btn btn-ghost btn-sm btn-square rounded-lg">
                       <Icon name="lucide:pencil" class="w-4 h-4" />
                     </button>
-                    <button @click="handleDeleteMatch(match.id)" class="btn btn-ghost btn-sm btn-square text-error rounded-lg">
-                      <Icon name="lucide:trash-2" class="w-4 h-4" />
+                    <button @click="handleResetMatch(match.id)" 
+                            class="btn btn-ghost btn-sm btn-square text-warning rounded-lg"
+                            :disabled="match.state !== 'played'"
+                            title="Azzera Risultato">
+                      <Icon name="lucide:rotate-ccw" class="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -964,9 +1016,11 @@ const handleSaveMatchTeams = async (matchId: number) => {
               <Icon name="lucide:pencil" class="w-4 h-4" />
               Modifica Squadre
             </button>
-            <button @click="handleDeleteMatch(mobileEditMatch!.id); mobileEditModalRef?.close(); mobileEditMatch = null" class="btn btn-ghost btn-sm text-error rounded-xl flex-1">
-              <Icon name="lucide:trash-2" class="w-4 h-4" />
-              Elimina
+            <button @click="handleResetMatch(mobileEditMatch!.id); mobileEditModalRef?.close(); mobileEditMatch = null" 
+                    class="btn btn-ghost btn-sm text-warning rounded-xl flex-1"
+                    :disabled="mobileEditMatch!.state !== 'played'">
+              <Icon name="lucide:rotate-ccw" class="w-4 h-4" />
+              Azzera
             </button>
           </div>
         </div>
@@ -975,3 +1029,19 @@ const handleSaveMatchTeams = async (matchId: number) => {
     </dialog>
   </div>
 </template>
+
+<style scoped>
+.list-move,
+.list-enter-active,
+.list-leave-active {
+  transition: all 0.5s ease;
+}
+.list-enter-from,
+.list-leave-to {
+  opacity: 0;
+  transform: translateY(15px);
+}
+.list-leave-active {
+  position: absolute;
+}
+</style>

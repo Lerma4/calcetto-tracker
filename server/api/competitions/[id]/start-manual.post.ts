@@ -1,6 +1,7 @@
 import { db } from '../../../database/db';
 import { competitions, matches } from '../../../database/schema';
 import { eq } from 'drizzle-orm';
+import { broadcastCompetitionUpdate } from '../../../utils/ws';
 
 export default defineEventHandler(async (event) => {
   const competitionId = requireIntParam(event, 'id');
@@ -30,6 +31,8 @@ export default defineEventHandler(async (event) => {
   await db.update(competitions)
     .set({ calendarMode: 'manual' })
     .where(eq(competitions.id, competitionId));
+
+  broadcastCompetitionUpdate(competitionId);
 
   return { success: true };
 });

@@ -1,6 +1,7 @@
 import { db } from '../../../../database/db';
 import { teams, matches } from '../../../../database/schema';
 import { eq, and } from 'drizzle-orm';
+import { broadcastCompetitionUpdate } from '../../../../utils/ws';
 
 export default defineEventHandler(async (event) => {
   const competitionId = requireIntParam(event, 'id');
@@ -54,6 +55,10 @@ export default defineEventHandler(async (event) => {
     .set({ team1Id: body.team1Id, team2Id: body.team2Id })
     .where(eq(matches.id, matchId))
     .returning();
+
+  if (updated) {
+    broadcastCompetitionUpdate(competitionId);
+  }
 
   return updated;
 });

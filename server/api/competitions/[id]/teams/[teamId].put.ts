@@ -1,6 +1,7 @@
 import { db } from '../../../../database/db';
 import { teams, matches, players } from '../../../../database/schema';
 import { eq, and, ne } from 'drizzle-orm';
+import { broadcastCompetitionUpdate } from '../../../../utils/ws';
 
 export default defineEventHandler(async (event) => {
   const competitionId = requireIntParam(event, 'id');
@@ -53,6 +54,8 @@ export default defineEventHandler(async (event) => {
   if (!updated.length) {
     throw createError({ statusCode: 404, message: 'Squadra non trovata' });
   }
+
+  broadcastCompetitionUpdate(competitionId);
 
   return updated[0];
 });
