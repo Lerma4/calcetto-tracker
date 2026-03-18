@@ -24,3 +24,13 @@ export function broadcastCompetitionUpdate(competitionId: number | string) {
     peer.send(message)
   }
 }
+
+export function broadcastFreeMatchesUpdate() {
+  const message = JSON.stringify({
+    type: 'free_matches_update',
+  })
+
+  for (const peer of peers) {
+    peer.send(message)
+  }
+}

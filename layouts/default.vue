@@ -39,6 +39,18 @@ function selectTheme(theme: string) {
           <NuxtLink to="/tornei" class="btn btn-ghost btn-sm rounded-xl font-black tracking-widest text-[11px] gap-2 px-6 hover:bg-base-100">
             <Icon name="lucide:swords" /> TORNEI
           </NuxtLink>
+          <NuxtLink to="/partite" class="btn btn-ghost btn-sm rounded-xl font-black tracking-widest text-[11px] gap-2 px-6 hover:bg-base-100">
+            <Icon name="lucide:goal" /> PARTITE
+          </NuxtLink>
+        </nav>
+
+        <nav v-else class="hidden lg:flex items-center gap-2 bg-base-200/50 p-1.5 rounded-2xl border border-base-content/5">
+          <NuxtLink to="/tornei" class="btn btn-ghost btn-sm rounded-xl font-black tracking-widest text-[11px] gap-2 px-6 hover:bg-base-100">
+            <Icon name="lucide:swords" /> TORNEI
+          </NuxtLink>
+          <NuxtLink to="/partite" class="btn btn-ghost btn-sm rounded-xl font-black tracking-widest text-[11px] gap-2 px-6 hover:bg-base-100">
+            <Icon name="lucide:goal" /> PARTITE
+          </NuxtLink>
         </nav>
 
         <div class="flex items-center gap-2 sm:gap-4">
@@ -114,6 +126,23 @@ function selectTheme(theme: string) {
         <NuxtLink to="/tornei" class="flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all hover:bg-base-200">
           <Icon name="lucide:swords" class="w-5 h-5" />
           <span class="text-[9px] font-bold uppercase tracking-widest opacity-70">Tornei</span>
+        </NuxtLink>
+        <NuxtLink to="/partite" class="flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all hover:bg-base-200">
+          <Icon name="lucide:goal" class="w-5 h-5" />
+          <span class="text-[9px] font-bold uppercase tracking-widest opacity-70">Partite</span>
+        </NuxtLink>
+      </div>
+    </nav>
+
+    <nav v-else class="lg:hidden fixed bottom-0 left-0 right-0 z-[100] px-3 pb-3 pt-1">
+      <div class="glass-card rounded-2xl flex items-center justify-around py-2 border border-base-content/5">
+        <NuxtLink to="/tornei" class="flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all hover:bg-base-200">
+          <Icon name="lucide:swords" class="w-5 h-5" />
+          <span class="text-[9px] font-bold uppercase tracking-widest opacity-70">Tornei</span>
+        </NuxtLink>
+        <NuxtLink to="/partite" class="flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all hover:bg-base-200">
+          <Icon name="lucide:goal" class="w-5 h-5" />
+          <span class="text-[9px] font-bold uppercase tracking-widest opacity-70">Partite</span>
         </NuxtLink>
       </div>
     </nav>

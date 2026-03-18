@@ -3,7 +3,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const isPublic =
     to.path === '/login' ||
     to.path === '/tornei' ||
-    to.path.startsWith('/tornei/');
+    to.path.startsWith('/tornei/') ||
+    to.path === '/partite' ||
+    to.path.startsWith('/partite/');
 
   const { user, fetchUser, mustChangePassword } = useAuth();
 

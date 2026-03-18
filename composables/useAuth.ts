@@ -11,7 +11,8 @@ export const useAuth = () => {
 
   const fetchUser = async () => {
     try {
-      const data = await $fetch<AuthUser>('/api/auth/me');
+      const requestFetch = import.meta.server ? useRequestFetch() : $fetch;
+      const data = await requestFetch<AuthUser>('/api/auth/me');
       user.value = data;
     } catch {
       user.value = null;

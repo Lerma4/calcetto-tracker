@@ -9,6 +9,7 @@ App web per gestire classifiche e punteggi di calciobalilla tra amici. Permette 
 - **Squadre** — Composizione automatica o manuale di coppie, con vincolo di unicità per giocatore
 - **Calendario** — Generazione automatica round-robin o inserimento manuale delle partite
 - **Risultati e classifica** — Inserimento punteggi, classifica ordinata per punti, differenza reti e gol fatti
+- **Partite libere** — Archivio pubblico di partite 2vs2 senza torneo, con storico filtrabile e statistiche per giocatore
 - **Temi** — Scelta tra temi chiari e scuri (cupcake, emerald, dracula)
 
 ## Stack tecnologico
@@ -28,6 +29,8 @@ Inizializza il database:
 ```bash
 npx drizzle-kit push
 ```
+
+Se aggiungi nuove tabelle o campi, riesegui `npx drizzle-kit push` prima di usare le nuove feature.
 
 ## Avvio in sviluppo
 

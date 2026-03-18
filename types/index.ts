@@ -5,6 +5,7 @@ export interface Player {
   role: 'attaccante' | 'portiere' | 'indifferente';
   nickname: string | null;
   disabled: boolean;
+  elo?: number;
 }
 
 export interface Competition {
@@ -42,4 +43,46 @@ export interface TeamWithPlayers extends Team {
 export interface CompetitionDetail extends Competition {
   teams: TeamWithPlayers[];
   matches: Match[];
+}
+
+export interface FreeMatch {
+  id: number;
+  team1Player1Id: number;
+  team1Player2Id: number;
+  team2Player1Id: number;
+  team2Player2Id: number;
+  score1: number;
+  score2: number;
+  createdAt: string | Date;
+}
+
+export interface FreeMatchDetail extends FreeMatch {
+  team1Player1: Player;
+  team1Player2: Player;
+  team2Player1: Player;
+  team2Player2: Player;
+}
+
+export interface PlayerStatsRow {
+  player: Player;
+  matchesPlayed: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  wins: number;
+  losses: number;
+  winLossRatio: string;
+  mostBeatenPlayers: Player[];
+  mostLossPlayers: Player[];
+}
+
+export interface PairStatsRow {
+  pairKey: string;
+  player1: Player;
+  player2: Player;
+  matchesPlayed: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  wins: number;
+  losses: number;
+  winLossRatio: string;
 }
