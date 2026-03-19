@@ -68,10 +68,15 @@ const handleChangePassword = async () => {
           </div>
 
           <!-- Error Alert -->
-          <div v-if="error" class="alert alert-error text-sm rounded-xl">
-            <Icon name="lucide:alert-circle" class="w-5 h-5" />
+          <BaseAlert
+            v-if="error"
+            variant="error"
+            icon="lucide:alert-circle"
+            alert-class="text-sm rounded-xl"
+            @close="error = ''"
+          >
             <span>{{ error }}</span>
-          </div>
+          </BaseAlert>
 
           <form @submit.prevent="handleChangePassword" class="space-y-5">
             <div class="">

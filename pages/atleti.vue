@@ -74,10 +74,15 @@ const handleToggle = async (id: number) => {
     <BasePageHeader title="Gestione Atleti" />
 
     <!-- Error Alert -->
-    <div v-if="errorMsg" class="alert alert-error shadow-lg rounded-2xl">
-      <Icon name="lucide:alert-circle" class="w-5 h-5" />
+    <BaseAlert
+      v-if="errorMsg"
+      variant="error"
+      icon="lucide:alert-circle"
+      alert-class="shadow-lg rounded-2xl"
+      @close="errorMsg = ''"
+    >
       <span class="font-bold">{{ errorMsg }}</span>
-    </div>
+    </BaseAlert>
 
     <!-- Add Player Card -->
     <BaseSectionCard title="Nuovo Atleta" icon="lucide:user-plus">

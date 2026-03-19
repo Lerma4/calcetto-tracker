@@ -88,6 +88,8 @@ const playerLabel = (id: number) => {
   return p.nickname || p.name
 }
 
+const playerOptionLabel = (player: Player) => `${player.name} ${player.surname}`
+
 watch(() => [newTeam.value.player1Id, newTeam.value.player2Id], ([p1, p2]) => {
   if (!nameManuallyEdited.value && p1 && p2) {
     newTeam.value.name = `${playerLabel(p1)} & ${playerLabel(p2)}`
@@ -525,10 +527,15 @@ const handleSaveMatchTeams = async (matchId: number) => {
     </div>
 
     <!-- Error Alert -->
-    <div v-if="errorMsg" class="alert alert-error shadow-lg rounded-2xl">
-      <Icon name="lucide:alert-circle" class="w-5 h-5" />
+    <BaseAlert
+      v-if="errorMsg"
+      variant="error"
+      icon="lucide:alert-circle"
+      alert-class="shadow-lg rounded-2xl"
+      @close="errorMsg = ''"
+    >
       <span class="font-bold">{{ errorMsg }}</span>
-    </div>
+    </BaseAlert>
 
     <!-- Skeleton Loading State -->
     <template v-if="isRefreshing">
@@ -876,14 +883,24 @@ const handleSaveMatchTeams = async (matchId: number) => {
       <!-- Add Team Form (only if no calendar yet) -->
       <form v-if="!hasCalendar && canCreate" @submit.prevent="handleAddTeam" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <input v-model="newTeam.name" @input="nameManuallyEdited = true" type="text" placeholder="Nome squadra" class="input input rounded-xl" required />
-        <select v-model.number="newTeam.player1Id" class="select select rounded-xl" required>
-          <option :value="0" disabled>Giocatore 1</option>
-          <option v-for="p in availablePlayers.filter(p => p.id !== newTeam.player2Id)" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
-        </select>
-        <select v-model.number="newTeam.player2Id" class="select select rounded-xl" required>
-          <option :value="0" disabled>Giocatore 2</option>
-          <option v-for="p in availablePlayers.filter(p => p.id !== newTeam.player1Id)" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
-        </select>
+        <BasePlayerSelect
+          v-model="newTeam.player1Id"
+          :players="availablePlayers.filter(p => p.id !== newTeam.player2Id)"
+          placeholder="Giocatore 1"
+          filter-placeholder="Filtra giocatore 1..."
+          select-class="rounded-xl"
+          :get-label="playerOptionLabel"
+          required
+        />
+        <BasePlayerSelect
+          v-model="newTeam.player2Id"
+          :players="availablePlayers.filter(p => p.id !== newTeam.player1Id)"
+          placeholder="Giocatore 2"
+          filter-placeholder="Filtra giocatore 2..."
+          select-class="rounded-xl"
+          :get-label="playerOptionLabel"
+          required
+        />
         <button type="submit" class="btn btn-primary rounded-xl font-black tracking-widest" :disabled="isAddingTeam">
           <span v-if="isAddingTeam" class="loading loading-spinner loading-sm"></span>
           AGGIUNGI
@@ -921,14 +938,24 @@ const handleSaveMatchTeams = async (matchId: number) => {
             <div class="space-y-3">
               <input v-model="editTeam.name" @input="editTeamNameManual = true" type="text" placeholder="Nome squadra" class="input input w-full rounded-xl" required />
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <select v-model.number="editTeam.player1Id" class="select select rounded-xl" required>
-                  <option :value="0" disabled>Giocatore 1</option>
-                  <option v-for="p in availablePlayersForEdit(team.id).filter(p => p.id !== editTeam.player2Id)" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
-                </select>
-                <select v-model.number="editTeam.player2Id" class="select select rounded-xl" required>
-                  <option :value="0" disabled>Giocatore 2</option>
-                  <option v-for="p in availablePlayersForEdit(team.id).filter(p => p.id !== editTeam.player1Id)" :key="p.id" :value="p.id">{{ p.name }} {{ p.surname }}</option>
-                </select>
+                <BasePlayerSelect
+                  v-model="editTeam.player1Id"
+                  :players="availablePlayersForEdit(team.id).filter(p => p.id !== editTeam.player2Id)"
+                  placeholder="Giocatore 1"
+                  filter-placeholder="Filtra giocatore 1..."
+                  select-class="rounded-xl"
+                  :get-label="playerOptionLabel"
+                  required
+                />
+                <BasePlayerSelect
+                  v-model="editTeam.player2Id"
+                  :players="availablePlayersForEdit(team.id).filter(p => p.id !== editTeam.player1Id)"
+                  placeholder="Giocatore 2"
+                  filter-placeholder="Filtra giocatore 2..."
+                  select-class="rounded-xl"
+                  :get-label="playerOptionLabel"
+                  required
+                />
               </div>
               <div class="flex gap-2 justify-end">
                 <button @click="handleSaveTeam(team.id)" class="btn btn-success btn-sm rounded-xl font-bold" :disabled="isSavingTeam">

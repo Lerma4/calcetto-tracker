@@ -71,10 +71,15 @@ const handleLogin = async () => {
           </h2>
 
           <!-- Error Alert -->
-          <div v-if="error" class="alert alert-error text-sm rounded-xl">
-            <Icon name="lucide:alert-circle" class="w-5 h-5" />
+          <BaseAlert
+            v-if="error"
+            variant="error"
+            icon="lucide:alert-circle"
+            alert-class="text-sm rounded-xl"
+            @close="error = ''"
+          >
             <span>{{ error }}</span>
-          </div>
+          </BaseAlert>
 
           <form @submit.prevent="handleLogin" class="space-y-5">
             <div class="">
