@@ -46,3 +46,13 @@ L'app sarà disponibile su `http://localhost:3000`.
 npm run build
 npm run preview
 ```
+
+## Docker in produzione
+
+L'immagine non applica piu automaticamente `drizzle-kit push --force` all'avvio.
+
+- Avvio standard: il container parte senza toccare lo schema del database
+- Sync schema esplicito all'avvio: imposta `AUTO_DB_PUSH_ON_START=true`
+- Sync manuale: esegui `npx drizzle-kit push` nel container solo quando vuoi applicare modifiche allo schema
+
+Questo riduce il rischio di cambi schema distruttivi in produzione.

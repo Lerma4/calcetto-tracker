@@ -92,6 +92,12 @@ Preview the production build:
 npm run preview
 ```
 
+## Production Docker Notes
+
+- The production container does not force database schema changes on startup.
+- Set `AUTO_DB_PUSH_ON_START=true` only when you explicitly want the container to run `npx drizzle-kit push` before booting the app.
+- Prefer manual backups before applying schema changes in production.
+
 ## Tests
 
 - There is currently no `test` script in `package.json`.

@@ -17,13 +17,16 @@ COPY --from=build /app/node_modules node_modules
 COPY --from=build /app/package.json package.json
 COPY --from=build /app/drizzle.config.ts drizzle.config.ts
 COPY --from=build /app/server/database/schema.ts server/database/schema.ts
+COPY docker-entrypoint.sh docker-entrypoint.sh
 
 RUN mkdir -p data
+RUN chmod +x docker-entrypoint.sh
 
 ENV NODE_ENV=production
 ENV HOST=0.0.0.0
 ENV PORT=3000
+ENV AUTO_DB_PUSH_ON_START=false
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npx drizzle-kit push --force && node .output/server/index.mjs"]
+CMD ["./docker-entrypoint.sh"]
