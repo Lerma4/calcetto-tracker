@@ -75,6 +75,12 @@ export interface PlayerStatsRow {
   mostLossPlayers: Player[];
 }
 
+export interface PairReference {
+  pairKey: string;
+  player1: Player;
+  player2: Player;
+}
+
 export interface PairStatsRow {
   pairKey: string;
   player1: Player;
@@ -85,4 +91,6 @@ export interface PairStatsRow {
   wins: number;
   losses: number;
   winLossRatio: string;
+  mostBeatenPairs: PairReference[];
+  mostLossPairs: PairReference[];
 }

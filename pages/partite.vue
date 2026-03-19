@@ -44,12 +44,23 @@ const editingMatchId = ref<number | null>(null)
 const historyQuery = ref('')
 const currentPage = ref(1)
 const selectedStatsPlayerId = ref<number | null>(null)
+const statsCurrentPage = ref(1)
+const selectedTeamStatsPairKey = ref<string | null>(null)
+const teamStatsCurrentPage = ref(1)
 const errorMsg = ref('')
 const successMsg = ref('')
 const isRefreshing = ref(false)
+const isRefreshingStats = ref(false)
+const showWsUpdateToast = ref(false)
+const showReadonlyNotice = ref(true)
+const hasLoadedHistoryOnce = ref(Array.isArray(freeMatches.value))
+
+let suppressWsNotificationsUntil = 0
+let wsToastTimer: ReturnType<typeof setTimeout> | null = null
 
 const newMatch = ref<MatchFormState>({ ...EMPTY_MATCH_FORM })
 const editMatch = ref<MatchFormState>({ ...EMPTY_MATCH_FORM })
+const statsMatches = ref<FreeMatchDetail[]>(freeMatches.value ? [...freeMatches.value] : [])
 
 const matchRows = computed(() => freeMatches.value || [])
 const players = computed(() => allPlayers.value || [])
@@ -79,6 +90,14 @@ const formatTopPlayers = (selectedPlayers: Player[]) => {
   }
 
   return selectedPlayers.map((player) => playerLabel(player)).join(', ')
+}
+
+const formatTopPairs = (selectedPairs: { player1: Player; player2: Player }[]) => {
+  if (!selectedPairs.length) {
+    return '-'
+  }
+
+  return selectedPairs.map((pair) => pairLabel(pair.player1, pair.player2)).join(', ')
 }
 
 const activePlayersForField = (form: MatchFormState, field: MatchField) => {
@@ -115,8 +134,15 @@ const filteredMatches = computed(() => {
   return matchRows.value.filter((match) => buildSearchText(match).includes(query))
 })
 
+const showHistorySkeleton = computed(() => !hasLoadedHistoryOnce.value && pending.value)
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredMatches.value.length / 10)))
 const paginatedMatches = computed(() => filteredMatches.value.slice((currentPage.value - 1) * 10, currentPage.value * 10))
+
+watchEffect(() => {
+  if (!pending.value && freeMatches.value !== undefined) {
+    hasLoadedHistoryOnce.value = true
+  }
+})
 
 watch(historyQuery, () => {
   currentPage.value = 1
@@ -128,10 +154,10 @@ watch(totalPages, (value) => {
   }
 })
 
-const playersInMatches = computed(() => {
+const playersInStats = computed(() => {
   const uniquePlayers = new Map<number, Player>()
 
-  for (const match of matchRows.value) {
+  for (const match of statsMatches.value) {
     for (const player of [match.team1Player1, match.team1Player2, match.team2Player1, match.team2Player2]) {
       uniquePlayers.set(player.id, player)
     }
@@ -140,7 +166,7 @@ const playersInMatches = computed(() => {
   return [...uniquePlayers.values()].sort((a, b) => playerLabel(a).localeCompare(playerLabel(b), 'it'))
 })
 
-const statsData = computed(() => buildFreeMatchStats(matchRows.value))
+const statsData = computed(() => buildFreeMatchStats(statsMatches.value))
 const playerStatsRows = computed(() => {
   if (!selectedStatsPlayerId.value) {
     return statsData.value.playerStats
@@ -148,9 +174,41 @@ const playerStatsRows = computed(() => {
 
   return statsData.value.playerStats.filter((row) => row.player.id === selectedStatsPlayerId.value)
 })
+const teamStatsRows = computed(() => {
+  if (!selectedTeamStatsPairKey.value) {
+    return statsData.value.pairStats
+  }
+
+  return statsData.value.pairStats.filter((row) => row.pairKey === selectedTeamStatsPairKey.value)
+})
+const teamsInStats = computed(() => statsData.value.pairStats)
+const totalStatsPages = computed(() => Math.max(1, Math.ceil(playerStatsRows.value.length / 10)))
+const paginatedPlayerStatsRows = computed(() => playerStatsRows.value.slice((statsCurrentPage.value - 1) * 10, statsCurrentPage.value * 10))
+const totalTeamStatsPages = computed(() => Math.max(1, Math.ceil(teamStatsRows.value.length / 10)))
+const paginatedTeamStatsRows = computed(() => teamStatsRows.value.slice((teamStatsCurrentPage.value - 1) * 10, teamStatsCurrentPage.value * 10))
 const matchesCountLabel = computed(() => `${matchRows.value.length} ${matchRows.value.length === 1 ? 'PARTITA' : 'PARTITE'}`)
 
-const handleRefresh = async (silent = false) => {
+watch(selectedStatsPlayerId, () => {
+  statsCurrentPage.value = 1
+})
+
+watch(selectedTeamStatsPairKey, () => {
+  teamStatsCurrentPage.value = 1
+})
+
+watch(totalStatsPages, (value) => {
+  if (statsCurrentPage.value > value) {
+    statsCurrentPage.value = value
+  }
+})
+
+watch(totalTeamStatsPages, (value) => {
+  if (teamStatsCurrentPage.value > value) {
+    teamStatsCurrentPage.value = value
+  }
+})
+
+const handleHistoryRefresh = async (silent = false) => {
   if (!silent) {
     isRefreshing.value = true
   }
@@ -159,6 +217,55 @@ const handleRefresh = async (silent = false) => {
     isRefreshing.value = false
   }
 }
+
+const syncStatsMatches = () => {
+  statsMatches.value = [...matchRows.value]
+}
+
+const hideWsUpdateToast = () => {
+  if (wsToastTimer) {
+    clearTimeout(wsToastTimer)
+    wsToastTimer = null
+  }
+
+  showWsUpdateToast.value = false
+}
+
+const showTransientWsToast = () => {
+  hideWsUpdateToast()
+  showWsUpdateToast.value = true
+  wsToastTimer = setTimeout(() => {
+    showWsUpdateToast.value = false
+    wsToastTimer = null
+  }, 3000)
+}
+
+const handleRefresh = async () => {
+  await handleHistoryRefresh()
+  syncStatsMatches()
+  hideWsUpdateToast()
+}
+
+const handleStatsRefresh = async () => {
+  isRefreshingStats.value = true
+  try {
+    await handleHistoryRefresh(true)
+    syncStatsMatches()
+    hideWsUpdateToast()
+  } finally {
+    isRefreshingStats.value = false
+  }
+}
+
+const markLocalMutation = () => {
+  if (!import.meta.client) {
+    return
+  }
+
+  suppressWsNotificationsUntil = Date.now() + 3000
+}
+
+const shouldSuppressWsNotification = () => import.meta.client && Date.now() < suppressWsNotificationsUntil
 
 const resetMessages = () => {
   errorMsg.value = ''
@@ -220,13 +327,14 @@ const handleAddMatch = async () => {
 
   isSubmitting.value = true
   try {
+    markLocalMutation()
     await $fetch('/api/free-matches', {
       method: 'POST',
       body: normalizeFormPayload(newMatch.value),
     })
     resetNewMatchForm()
     successMsg.value = 'Partita salvata'
-    await handleRefresh(true)
+    await handleHistoryRefresh(true)
   } catch (error: any) {
     errorMsg.value = error.data?.message || 'Errore nel salvataggio della partita'
   } finally {
@@ -258,13 +366,14 @@ const handleSaveEdit = async (matchId: number) => {
 
   isSubmitting.value = true
   try {
+    markLocalMutation()
     await $fetch(`/api/free-matches/${matchId}`, {
       method: 'PUT',
       body: normalizeFormPayload(editMatch.value),
     })
     editingMatchId.value = null
     successMsg.value = 'Partita aggiornata'
-    await handleRefresh(true)
+    await handleHistoryRefresh(true)
   } catch (error: any) {
     errorMsg.value = error.data?.message || 'Errore durante la modifica della partita'
   } finally {
@@ -284,12 +393,13 @@ const handleDeleteMatch = async (matchId: number) => {
   resetMessages()
   isSubmitting.value = true
   try {
+    markLocalMutation()
     await $fetch(`/api/free-matches/${matchId}`, { method: 'DELETE' })
     if (editingMatchId.value === matchId) {
       editingMatchId.value = null
     }
     successMsg.value = 'Partita eliminata'
-    await handleRefresh(true)
+    await handleHistoryRefresh(true)
   } catch (error: any) {
     errorMsg.value = error.data?.message || 'Errore durante l\'eliminazione della partita'
   } finally {
@@ -307,11 +417,16 @@ const connectWs = () => {
   const wsUrl = `${protocol}//${window.location.host}/ws`
   const socket = new WebSocket(wsUrl)
 
-  socket.onmessage = (event) => {
+  socket.onmessage = async (event) => {
     try {
       const data = JSON.parse(event.data)
       if (data.type === 'free_matches_update') {
-        handleRefresh(true)
+        if (shouldSuppressWsNotification()) {
+          return
+        }
+
+        await handleHistoryRefresh(true)
+        showTransientWsToast()
       }
     } catch (error) {
       console.error('Failed to parse WS message', error)
@@ -332,62 +447,100 @@ onMounted(() => {
 
 onUnmounted(() => {
   clearTimeout(wsReconnectTimer)
+  hideWsUpdateToast()
   ws.value?.close()
 })
 </script>
 
 <template>
   <div class="space-y-10">
+    <Teleport to="body">
+      <Transition name="toast-slide">
+        <div v-if="showWsUpdateToast" class="pointer-events-none fixed top-24 right-4 z-[120] w-[calc(100vw-2rem)] max-w-xs">
+          <BaseAlert
+            variant="info"
+            icon="lucide:bell-ring"
+            alert-class="pointer-events-auto shadow-xl rounded-2xl border border-info/20"
+            @close="hideWsUpdateToast"
+          >
+            <div>
+              <div class="font-black">Storico aggiornato</div>
+              <div class="text-xs font-medium opacity-80">Le statistiche devono essere aggiornate manualmente.</div>
+            </div>
+          </BaseAlert>
+        </div>
+      </Transition>
+    </Teleport>
+
     <BasePageHeader title="Partite Libere" />
 
-    <div class="flex justify-end">
-      <div class="flex items-center gap-2 shrink-0">
-        <button @click="handleRefresh()" class="btn btn-ghost btn-circle btn-sm sm:btn-md rounded-2xl" :disabled="pending || isSubmitting || isRefreshing" title="Aggiorna dati">
-          <Icon name="lucide:refresh-cw" class="w-4 h-4 sm:w-5 sm:h-5" :class="{ 'animate-spin': pending || isRefreshing }" />
-        </button>
-        <span class="badge badge-primary badge-sm sm:badge-lg font-black tracking-widest">{{ matchesCountLabel }}</span>
-      </div>
-    </div>
-
-    <div v-if="errorMsg" class="alert alert-error shadow-lg rounded-2xl">
-      <Icon name="lucide:alert-circle" class="w-5 h-5" />
+    <BaseAlert
+      v-if="errorMsg"
+      variant="error"
+      icon="lucide:alert-circle"
+      alert-class="shadow-lg rounded-2xl"
+      @close="errorMsg = ''"
+    >
       <span class="font-bold">{{ errorMsg }}</span>
-    </div>
+    </BaseAlert>
 
-    <div v-if="successMsg" class="alert alert-success shadow-lg rounded-2xl">
-      <Icon name="lucide:check-circle-2" class="w-5 h-5" />
+    <BaseAlert
+      v-if="successMsg"
+      variant="success"
+      icon="lucide:check-circle-2"
+      alert-class="shadow-lg rounded-2xl"
+      @close="successMsg = ''"
+    >
       <span class="font-bold">{{ successMsg }}</span>
-    </div>
+    </BaseAlert>
 
     <div class="glass-card rounded-[2rem] p-4 sm:p-6 md:p-8 space-y-6">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <h2 class="text-base sm:text-lg font-black uppercase tracking-widest opacity-60">
           <Icon name="lucide:plus-circle" class="inline w-5 h-5 mr-2" />Inserisci Partita
         </h2>
-        <span class="badge badge-secondary font-black tracking-widest text-[10px] sm:text-xs px-4 py-3">2 VS 2</span>
+        <button
+          form="add-free-match-form"
+          type="submit"
+          class="btn btn-primary rounded-2xl font-black tracking-widest h-12 px-6"
+          :disabled="!canCreate || isSubmitting"
+        >
+          <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
+          <span v-else>SALVA</span>
+        </button>
       </div>
 
-      <div v-if="!canCreate" class="alert rounded-2xl bg-base-200 border border-base-content/10">
-        <Icon name="lucide:lock" class="w-5 h-5" />
+      <BaseAlert
+        v-if="!canCreate && showReadonlyNotice"
+        icon="lucide:lock"
+        alert-class="rounded-2xl bg-base-200 border border-base-content/10"
+        @close="showReadonlyNotice = false"
+      >
         <span class="font-bold">I dati sono pubblici, ma solo gli utenti loggati possono aggiungere, modificare o eliminare partite.</span>
-      </div>
+      </BaseAlert>
 
-      <form @submit.prevent="handleAddMatch" class="space-y-5">
-        <div class="grid grid-cols-1 xl:grid-cols-[1fr_200px_1fr_auto] gap-4 items-start">
+      <form id="add-free-match-form" @submit.prevent="handleAddMatch" class="space-y-5">
+        <div class="grid grid-cols-1 xl:grid-cols-[1fr_200px_1fr] gap-4 items-start">
           <div class="bg-base-200 rounded-[1.5rem] p-4 sm:p-5 space-y-4">
             <div class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Coppia 1</div>
-            <select v-model.number="newMatch.team1Player1Id" class="select rounded-xl w-full" :disabled="!canCreate || isSubmitting">
-              <option :value="0" disabled>Giocatore 1</option>
-              <option v-for="player in activePlayersForField(newMatch, 'team1Player1Id')" :key="`new-t1p1-${player.id}`" :value="player.id">
-                {{ playerFullLabel(player) }}
-              </option>
-            </select>
-            <select v-model.number="newMatch.team1Player2Id" class="select rounded-xl w-full" :disabled="!canCreate || isSubmitting">
-              <option :value="0" disabled>Giocatore 2</option>
-              <option v-for="player in activePlayersForField(newMatch, 'team1Player2Id')" :key="`new-t1p2-${player.id}`" :value="player.id">
-                {{ playerFullLabel(player) }}
-              </option>
-            </select>
+            <BasePlayerSelect
+              v-model="newMatch.team1Player1Id"
+              :players="activePlayersForField(newMatch, 'team1Player1Id')"
+              placeholder="Giocatore 1"
+              filter-placeholder="Filtra giocatore 1..."
+              select-class="rounded-xl"
+              :get-label="playerFullLabel"
+              :disabled="!canCreate || isSubmitting"
+            />
+            <BasePlayerSelect
+              v-model="newMatch.team1Player2Id"
+              :players="activePlayersForField(newMatch, 'team1Player2Id')"
+              placeholder="Giocatore 2"
+              filter-placeholder="Filtra giocatore 2..."
+              select-class="rounded-xl"
+              :get-label="playerFullLabel"
+              :disabled="!canCreate || isSubmitting"
+            />
           </div>
 
           <div class="bg-base-200 rounded-[1.5rem] p-4 sm:p-5 space-y-4">
@@ -401,40 +554,54 @@ onUnmounted(() => {
 
           <div class="bg-base-200 rounded-[1.5rem] p-4 sm:p-5 space-y-4">
             <div class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Coppia 2</div>
-            <select v-model.number="newMatch.team2Player1Id" class="select rounded-xl w-full" :disabled="!canCreate || isSubmitting">
-              <option :value="0" disabled>Giocatore 3</option>
-              <option v-for="player in activePlayersForField(newMatch, 'team2Player1Id')" :key="`new-t2p1-${player.id}`" :value="player.id">
-                {{ playerFullLabel(player) }}
-              </option>
-            </select>
-            <select v-model.number="newMatch.team2Player2Id" class="select rounded-xl w-full" :disabled="!canCreate || isSubmitting">
-              <option :value="0" disabled>Giocatore 4</option>
-              <option v-for="player in activePlayersForField(newMatch, 'team2Player2Id')" :key="`new-t2p2-${player.id}`" :value="player.id">
-                {{ playerFullLabel(player) }}
-              </option>
-            </select>
+            <BasePlayerSelect
+              v-model="newMatch.team2Player1Id"
+              :players="activePlayersForField(newMatch, 'team2Player1Id')"
+              placeholder="Giocatore 3"
+              filter-placeholder="Filtra giocatore 3..."
+              select-class="rounded-xl"
+              :get-label="playerFullLabel"
+              :disabled="!canCreate || isSubmitting"
+            />
+            <BasePlayerSelect
+              v-model="newMatch.team2Player2Id"
+              :players="activePlayersForField(newMatch, 'team2Player2Id')"
+              placeholder="Giocatore 4"
+              filter-placeholder="Filtra giocatore 4..."
+              select-class="rounded-xl"
+              :get-label="playerFullLabel"
+              :disabled="!canCreate || isSubmitting"
+            />
           </div>
-
-          <button type="submit" class="btn btn-primary rounded-2xl font-black tracking-widest h-14 xl:self-stretch" :disabled="!canCreate || isSubmitting">
-            <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
-            <span v-else>SALVA</span>
-          </button>
         </div>
       </form>
     </div>
 
     <div class="glass-card rounded-[2rem] p-4 sm:p-6 md:p-8 space-y-6">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <h2 class="text-base sm:text-lg font-black uppercase tracking-widest opacity-60">
-          <Icon name="lucide:history" class="inline w-5 h-5 mr-2" />Storico Partite
-        </h2>
-        <div class="relative w-full sm:w-80">
-          <Icon name="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
-          <input v-model="historyQuery" type="text" placeholder="Cerca giocatore, coppia, punteggio o data..." class="input input-sm rounded-xl w-full pl-9" />
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <div class="flex items-center justify-between gap-3">
+          <h2 class="text-base sm:text-lg font-black uppercase tracking-widest opacity-60">
+            <Icon name="lucide:history" class="inline w-5 h-5 mr-2" />Storico Partite
+          </h2>
+          <span class="badge badge-primary badge-sm sm:badge-lg font-black tracking-widest shrink-0">{{ matchesCountLabel }}</span>
+        </div>
+        <div class="flex items-center gap-2 w-full lg:w-auto">
+          <div class="relative flex-1 lg:w-80">
+            <Icon name="lucide:search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-40" />
+            <input v-model="historyQuery" type="text" placeholder="Cerca giocatore, coppia, punteggio o data..." class="input input-sm rounded-xl w-full pl-9" />
+          </div>
+          <button
+            @click="handleRefresh()"
+            class="btn btn-ghost btn-circle btn-sm sm:btn-md rounded-2xl shrink-0"
+            :disabled="pending || isSubmitting || isRefreshing"
+            title="Aggiorna dati"
+          >
+            <Icon name="lucide:refresh-cw" class="w-4 h-4 sm:w-5 sm:h-5" :class="{ 'animate-spin': pending || isRefreshing }" />
+          </button>
         </div>
       </div>
 
-      <template v-if="pending">
+      <template v-if="showHistorySkeleton">
         <div class="space-y-3">
           <div class="skeleton h-16 rounded-2xl"></div>
           <div class="skeleton h-16 rounded-2xl"></div>
@@ -500,18 +667,24 @@ onUnmounted(() => {
                     </td>
                     <td>
                       <div class="space-y-2">
-                        <select v-model.number="editMatch.team1Player1Id" class="select select-sm rounded-xl w-full">
-                          <option :value="0" disabled>Giocatore 1</option>
-                          <option v-for="player in activePlayersForField(editMatch, 'team1Player1Id')" :key="`edit-d-t1p1-${player.id}`" :value="player.id">
-                            {{ playerFullLabel(player) }}
-                          </option>
-                        </select>
-                        <select v-model.number="editMatch.team1Player2Id" class="select select-sm rounded-xl w-full">
-                          <option :value="0" disabled>Giocatore 2</option>
-                          <option v-for="player in activePlayersForField(editMatch, 'team1Player2Id')" :key="`edit-d-t1p2-${player.id}`" :value="player.id">
-                            {{ playerFullLabel(player) }}
-                          </option>
-                        </select>
+                        <BasePlayerSelect
+                          v-model="editMatch.team1Player1Id"
+                          :players="activePlayersForField(editMatch, 'team1Player1Id')"
+                          placeholder="Giocatore 1"
+                          filter-placeholder="Filtra giocatore 1..."
+                          input-class="input-sm"
+                          select-class="select-sm rounded-xl"
+                          :get-label="playerFullLabel"
+                        />
+                        <BasePlayerSelect
+                          v-model="editMatch.team1Player2Id"
+                          :players="activePlayersForField(editMatch, 'team1Player2Id')"
+                          placeholder="Giocatore 2"
+                          filter-placeholder="Filtra giocatore 2..."
+                          input-class="input-sm"
+                          select-class="select-sm rounded-xl"
+                          :get-label="playerFullLabel"
+                        />
                       </div>
                     </td>
                     <td>
@@ -523,18 +696,24 @@ onUnmounted(() => {
                     </td>
                     <td>
                       <div class="space-y-2">
-                        <select v-model.number="editMatch.team2Player1Id" class="select select-sm rounded-xl w-full">
-                          <option :value="0" disabled>Giocatore 3</option>
-                          <option v-for="player in activePlayersForField(editMatch, 'team2Player1Id')" :key="`edit-d-t2p1-${player.id}`" :value="player.id">
-                            {{ playerFullLabel(player) }}
-                          </option>
-                        </select>
-                        <select v-model.number="editMatch.team2Player2Id" class="select select-sm rounded-xl w-full">
-                          <option :value="0" disabled>Giocatore 4</option>
-                          <option v-for="player in activePlayersForField(editMatch, 'team2Player2Id')" :key="`edit-d-t2p2-${player.id}`" :value="player.id">
-                            {{ playerFullLabel(player) }}
-                          </option>
-                        </select>
+                        <BasePlayerSelect
+                          v-model="editMatch.team2Player1Id"
+                          :players="activePlayersForField(editMatch, 'team2Player1Id')"
+                          placeholder="Giocatore 3"
+                          filter-placeholder="Filtra giocatore 3..."
+                          input-class="input-sm"
+                          select-class="select-sm rounded-xl"
+                          :get-label="playerFullLabel"
+                        />
+                        <BasePlayerSelect
+                          v-model="editMatch.team2Player2Id"
+                          :players="activePlayersForField(editMatch, 'team2Player2Id')"
+                          placeholder="Giocatore 4"
+                          filter-placeholder="Filtra giocatore 4..."
+                          input-class="input-sm"
+                          select-class="select-sm rounded-xl"
+                          :get-label="playerFullLabel"
+                        />
                       </div>
                     </td>
                     <td class="pr-4">
@@ -585,35 +764,47 @@ onUnmounted(() => {
               <template v-else>
                 <div class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">{{ formatDateTime(match.createdAt) }}</div>
                 <div class="space-y-3">
-                  <select v-model.number="editMatch.team1Player1Id" class="select select-sm rounded-xl w-full">
-                    <option :value="0" disabled>Giocatore 1</option>
-                    <option v-for="player in activePlayersForField(editMatch, 'team1Player1Id')" :key="`edit-m-t1p1-${player.id}`" :value="player.id">
-                      {{ playerFullLabel(player) }}
-                    </option>
-                  </select>
-                  <select v-model.number="editMatch.team1Player2Id" class="select select-sm rounded-xl w-full">
-                    <option :value="0" disabled>Giocatore 2</option>
-                    <option v-for="player in activePlayersForField(editMatch, 'team1Player2Id')" :key="`edit-m-t1p2-${player.id}`" :value="player.id">
-                      {{ playerFullLabel(player) }}
-                    </option>
-                  </select>
+                  <BasePlayerSelect
+                    v-model="editMatch.team1Player1Id"
+                    :players="activePlayersForField(editMatch, 'team1Player1Id')"
+                    placeholder="Giocatore 1"
+                    filter-placeholder="Filtra giocatore 1..."
+                    input-class="input-sm"
+                    select-class="select-sm rounded-xl"
+                    :get-label="playerFullLabel"
+                  />
+                  <BasePlayerSelect
+                    v-model="editMatch.team1Player2Id"
+                    :players="activePlayersForField(editMatch, 'team1Player2Id')"
+                    placeholder="Giocatore 2"
+                    filter-placeholder="Filtra giocatore 2..."
+                    input-class="input-sm"
+                    select-class="select-sm rounded-xl"
+                    :get-label="playerFullLabel"
+                  />
                   <div class="grid grid-cols-[1fr_auto_1fr] gap-2 items-center">
                     <input v-model.number="editMatch.score1" type="number" min="0" class="input input-sm rounded-xl text-center font-black" />
                     <span class="font-black opacity-30 text-xs">VS</span>
                     <input v-model.number="editMatch.score2" type="number" min="0" class="input input-sm rounded-xl text-center font-black" />
                   </div>
-                  <select v-model.number="editMatch.team2Player1Id" class="select select-sm rounded-xl w-full">
-                    <option :value="0" disabled>Giocatore 3</option>
-                    <option v-for="player in activePlayersForField(editMatch, 'team2Player1Id')" :key="`edit-m-t2p1-${player.id}`" :value="player.id">
-                      {{ playerFullLabel(player) }}
-                    </option>
-                  </select>
-                  <select v-model.number="editMatch.team2Player2Id" class="select select-sm rounded-xl w-full">
-                    <option :value="0" disabled>Giocatore 4</option>
-                    <option v-for="player in activePlayersForField(editMatch, 'team2Player2Id')" :key="`edit-m-t2p2-${player.id}`" :value="player.id">
-                      {{ playerFullLabel(player) }}
-                    </option>
-                  </select>
+                  <BasePlayerSelect
+                    v-model="editMatch.team2Player1Id"
+                    :players="activePlayersForField(editMatch, 'team2Player1Id')"
+                    placeholder="Giocatore 3"
+                    filter-placeholder="Filtra giocatore 3..."
+                    input-class="input-sm"
+                    select-class="select-sm rounded-xl"
+                    :get-label="playerFullLabel"
+                  />
+                  <BasePlayerSelect
+                    v-model="editMatch.team2Player2Id"
+                    :players="activePlayersForField(editMatch, 'team2Player2Id')"
+                    placeholder="Giocatore 4"
+                    filter-placeholder="Filtra giocatore 4..."
+                    input-class="input-sm"
+                    select-class="select-sm rounded-xl"
+                    :get-label="playerFullLabel"
+                  />
                 </div>
                 <div class="flex gap-2">
                   <button @click="handleSaveEdit(match.id)" class="btn btn-success btn-sm rounded-xl flex-1 font-black tracking-widest" :disabled="isSubmitting">
@@ -645,16 +836,26 @@ onUnmounted(() => {
         <h2 class="text-base sm:text-lg font-black uppercase tracking-widest opacity-60">
           <Icon name="lucide:bar-chart-3" class="inline w-5 h-5 mr-2" />Statistiche Giocatore
         </h2>
-        <div class="w-full lg:w-80">
-          <label class="label pb-2">
-            <span class="label-text text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Filtro giocatore</span>
-          </label>
-          <select v-model="selectedStatsPlayerId" class="select rounded-xl w-full">
-            <option :value="null">Tutti i giocatori</option>
-            <option v-for="player in playersInMatches" :key="`vs-${player.id}`" :value="player.id">
-              {{ playerFullLabel(player) }}
-            </option>
-          </select>
+        <div class="flex flex-col sm:flex-row sm:items-end gap-3 w-full lg:w-auto">
+          <div class="w-full lg:w-80">
+            <label class="label pb-2">
+              <span class="label-text text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Filtro giocatore</span>
+            </label>
+            <select v-model="selectedStatsPlayerId" class="select rounded-xl w-full">
+              <option :value="null">Tutti i giocatori</option>
+              <option v-for="player in playersInStats" :key="`vs-${player.id}`" :value="player.id">
+                {{ playerFullLabel(player) }}
+              </option>
+            </select>
+          </div>
+          <button
+            @click="handleStatsRefresh"
+            class="btn btn-ghost btn-circle btn-sm sm:btn-md rounded-2xl shrink-0"
+            :disabled="pending || isSubmitting || isRefreshing || isRefreshingStats"
+            title="Aggiorna statistiche"
+          >
+            <Icon name="lucide:refresh-cw" class="w-4 h-4 sm:w-5 sm:h-5" :class="{ 'animate-spin': isRefreshingStats }" />
+          </button>
         </div>
       </div>
 
@@ -679,7 +880,7 @@ onUnmounted(() => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in playerStatsRows" :key="`stats-${row.player.id}`" class="hover:bg-base-200 transition-all">
+              <tr v-for="row in paginatedPlayerStatsRows" :key="`stats-${row.player.id}`" class="hover:bg-base-200 transition-all">
                 <td class="pl-4">
                   <div class="font-black">{{ playerLabel(row.player) }}</div>
                   <div class="text-xs opacity-50">{{ playerFullLabel(row.player) }}</div>
@@ -698,7 +899,7 @@ onUnmounted(() => {
         </div>
 
         <div class="md:hidden space-y-3">
-          <div v-for="row in playerStatsRows" :key="`stats-mobile-${row.player.id}`" class="bg-base-200 rounded-2xl p-4 space-y-4">
+          <div v-for="row in paginatedPlayerStatsRows" :key="`stats-mobile-${row.player.id}`" class="bg-base-200 rounded-2xl p-4 space-y-4">
             <div>
               <div class="font-black text-lg">{{ playerLabel(row.player) }}</div>
               <div class="text-xs opacity-50">{{ playerFullLabel(row.player) }}</div>
@@ -739,7 +940,152 @@ onUnmounted(() => {
             </div>
           </div>
         </div>
+
+        <div v-if="playerStatsRows.length > 10" class="flex items-center justify-center gap-3 pt-2">
+          <button class="btn btn-ghost btn-sm rounded-xl" :disabled="statsCurrentPage === 1" @click="statsCurrentPage -= 1">
+            <Icon name="lucide:chevron-left" class="w-4 h-4" />
+          </button>
+          <span class="badge badge-ghost font-black tracking-widest px-4 py-3">Pagina {{ statsCurrentPage }} / {{ totalStatsPages }}</span>
+          <button class="btn btn-ghost btn-sm rounded-xl" :disabled="statsCurrentPage === totalStatsPages" @click="statsCurrentPage += 1">
+            <Icon name="lucide:chevron-right" class="w-4 h-4" />
+          </button>
+        </div>
+      </template>
+    </div>
+
+    <div class="glass-card rounded-[2rem] p-4 sm:p-6 md:p-8 space-y-6">
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+        <h2 class="text-base sm:text-lg font-black uppercase tracking-widest opacity-60">
+          <Icon name="lucide:users-round" class="inline w-5 h-5 mr-2" />Statistiche Squadra
+        </h2>
+        <div class="flex flex-col sm:flex-row sm:items-end gap-3 w-full lg:w-auto">
+          <div class="w-full lg:w-80">
+            <label class="label pb-2">
+              <span class="label-text text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Filtro squadra</span>
+            </label>
+            <select v-model="selectedTeamStatsPairKey" class="select rounded-xl w-full">
+              <option :value="null">Tutte le squadre</option>
+              <option v-for="pair in teamsInStats" :key="`pair-stats-${pair.pairKey}`" :value="pair.pairKey">
+                {{ pairFullLabel(pair.player1, pair.player2) }}
+              </option>
+            </select>
+          </div>
+          <button
+            @click="handleStatsRefresh"
+            class="btn btn-ghost btn-circle btn-sm sm:btn-md rounded-2xl shrink-0"
+            :disabled="pending || isSubmitting || isRefreshing || isRefreshingStats"
+            title="Aggiorna statistiche squadre"
+          >
+            <Icon name="lucide:refresh-cw" class="w-4 h-4 sm:w-5 sm:h-5" :class="{ 'animate-spin': isRefreshingStats }" />
+          </button>
+        </div>
+      </div>
+
+      <div v-if="!teamStatsRows.length" class="text-center opacity-40 py-8 font-bold">
+        Nessuna statistica squadra disponibile per il filtro corrente.
+      </div>
+
+      <template v-else>
+        <div class="hidden md:block overflow-x-auto">
+          <table class="table table-md w-full">
+            <thead>
+              <tr class="text-[10px] font-black uppercase tracking-widest opacity-40 border-none">
+                <th class="pl-4">Squadra</th>
+                <th class="text-center">G</th>
+                <th class="text-center">GF</th>
+                <th class="text-center">GS</th>
+                <th class="text-center">V</th>
+                <th class="text-center">P</th>
+                <th class="text-center">Rateo V/S</th>
+                <th>Battuto di più</th>
+                <th class="pr-4">Perso di più</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in paginatedTeamStatsRows" :key="`team-stats-${row.pairKey}`" class="hover:bg-base-200 transition-all">
+                <td class="pl-4">
+                  <div class="font-black">{{ pairLabel(row.player1, row.player2) }}</div>
+                  <div class="text-xs opacity-50">{{ pairFullLabel(row.player1, row.player2) }}</div>
+                </td>
+                <td class="text-center font-black">{{ row.matchesPlayed }}</td>
+                <td class="text-center font-black text-success">{{ row.goalsFor }}</td>
+                <td class="text-center font-black text-error/80">{{ row.goalsAgainst }}</td>
+                <td class="text-center font-black">{{ row.wins }}</td>
+                <td class="text-center font-black">{{ row.losses }}</td>
+                <td class="text-center"><span class="badge badge-ghost font-black">{{ row.winLossRatio }}</span></td>
+                <td class="font-medium">{{ formatTopPairs(row.mostBeatenPairs) }}</td>
+                <td class="pr-4 font-medium">{{ formatTopPairs(row.mostLossPairs) }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="md:hidden space-y-3">
+          <div v-for="row in paginatedTeamStatsRows" :key="`team-stats-mobile-${row.pairKey}`" class="bg-base-200 rounded-2xl p-4 space-y-4">
+            <div>
+              <div class="font-black text-lg">{{ pairLabel(row.player1, row.player2) }}</div>
+              <div class="text-xs opacity-50">{{ pairFullLabel(row.player1, row.player2) }}</div>
+            </div>
+            <div class="grid grid-cols-3 gap-3 text-center">
+              <div class="bg-base-100 rounded-xl p-3">
+                <div class="text-[10px] font-black uppercase tracking-widest opacity-40">G</div>
+                <div class="font-black">{{ row.matchesPlayed }}</div>
+              </div>
+              <div class="bg-base-100 rounded-xl p-3">
+                <div class="text-[10px] font-black uppercase tracking-widest opacity-40">GF</div>
+                <div class="font-black text-success">{{ row.goalsFor }}</div>
+              </div>
+              <div class="bg-base-100 rounded-xl p-3">
+                <div class="text-[10px] font-black uppercase tracking-widest opacity-40">GS</div>
+                <div class="font-black text-error/80">{{ row.goalsAgainst }}</div>
+              </div>
+              <div class="bg-base-100 rounded-xl p-3">
+                <div class="text-[10px] font-black uppercase tracking-widest opacity-40">V</div>
+                <div class="font-black">{{ row.wins }}</div>
+              </div>
+              <div class="bg-base-100 rounded-xl p-3">
+                <div class="text-[10px] font-black uppercase tracking-widest opacity-40">P</div>
+                <div class="font-black">{{ row.losses }}</div>
+              </div>
+              <div class="bg-base-100 rounded-xl p-3">
+                <div class="text-[10px] font-black uppercase tracking-widest opacity-40">V/S</div>
+                <div class="font-black">{{ row.winLossRatio }}</div>
+              </div>
+            </div>
+            <div>
+              <div class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1">Squadra battuta più volte</div>
+              <div class="font-medium">{{ formatTopPairs(row.mostBeatenPairs) }}</div>
+            </div>
+            <div>
+              <div class="text-[10px] font-black uppercase tracking-[0.3em] opacity-40 mb-1">Squadra contro cui si è perso più volte</div>
+              <div class="font-medium">{{ formatTopPairs(row.mostLossPairs) }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="teamStatsRows.length > 10" class="flex items-center justify-center gap-3 pt-2">
+          <button class="btn btn-ghost btn-sm rounded-xl" :disabled="teamStatsCurrentPage === 1" @click="teamStatsCurrentPage -= 1">
+            <Icon name="lucide:chevron-left" class="w-4 h-4" />
+          </button>
+          <span class="badge badge-ghost font-black tracking-widest px-4 py-3">Pagina {{ teamStatsCurrentPage }} / {{ totalTeamStatsPages }}</span>
+          <button class="btn btn-ghost btn-sm rounded-xl" :disabled="teamStatsCurrentPage === totalTeamStatsPages" @click="teamStatsCurrentPage += 1">
+            <Icon name="lucide:chevron-right" class="w-4 h-4" />
+          </button>
+        </div>
       </template>
     </div>
   </div>
 </template>
+
+<style scoped>
+.toast-slide-enter-active,
+.toast-slide-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.toast-slide-enter-from,
+.toast-slide-leave-to {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+</style>

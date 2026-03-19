@@ -1,4 +1,4 @@
-import type { FreeMatchDetail, PairStatsRow, Player, PlayerStatsRow } from '~/types'
+import type { FreeMatchDetail, PairReference, PairStatsRow, Player, PlayerStatsRow } from '~/types'
 
 interface BuildStatsOptions {
   vsPlayerId?: number | null
@@ -24,6 +24,8 @@ interface MutablePairStats {
   goalsAgainst: number
   wins: number
   losses: number
+  beatenCounts: Map<string, number>
+  lossCounts: Map<string, number>
 }
 
 function playerLabel(player: Player) {
@@ -32,6 +34,11 @@ function playerLabel(player: Player) {
 
 function sortedPair(players: [Player, Player]) {
   return [...players].sort((a, b) => a.id - b.id) as [Player, Player]
+}
+
+function getPairKey(players: [Player, Player]) {
+  const [player1, player2] = sortedPair(players)
+  return `${player1.id}-${player2.id}`
 }
 
 function formatWinLossRatio(wins: number, losses: number) {
@@ -67,6 +74,31 @@ function getTopPlayers(counts: Map<number, number>, playersById: Map<number, Pla
     .map((id) => playersById.get(id))
     .filter((player): player is Player => !!player)
     .sort((a, b) => playerLabel(a).localeCompare(playerLabel(b), 'it'))
+}
+
+function getTopPairs(counts: Map<string, number>, pairsByKey: Map<string, PairReference>) {
+  let max = 0
+  const keys: string[] = []
+
+  for (const [pairKey, count] of counts.entries()) {
+    if (count > max) {
+      max = count
+      keys.length = 0
+      keys.push(pairKey)
+      continue
+    }
+
+    if (count === max && count > 0) {
+      keys.push(pairKey)
+    }
+  }
+
+  return keys
+    .map((key) => pairsByKey.get(key))
+    .filter((pair): pair is PairReference => !!pair)
+    .sort((a, b) =>
+      playerLabel(a.player1).localeCompare(playerLabel(b.player1), 'it') ||
+      playerLabel(a.player2).localeCompare(playerLabel(b.player2), 'it'))
 }
 
 function getOrCreatePlayerStats(store: Map<number, MutablePlayerStats>, player: Player) {
@@ -106,6 +138,8 @@ function getOrCreatePairStats(store: Map<string, MutablePairStats>, players: [Pl
     goalsAgainst: 0,
     wins: 0,
     losses: 0,
+    beatenCounts: new Map(),
+    lossCounts: new Map(),
   }
   store.set(key, next)
   return next
@@ -129,30 +163,38 @@ function applyCounters(target: MutablePlayerStats, scoreFor: number, scoreAgains
   }
 }
 
-function applyPairCounters(target: MutablePairStats, scoreFor: number, scoreAgainst: number) {
+function applyPairCounters(target: MutablePairStats, scoreFor: number, scoreAgainst: number, opponentPairKey: string) {
   target.matchesPlayed += 1
   target.goalsFor += scoreFor
   target.goalsAgainst += scoreAgainst
 
   if (scoreFor > scoreAgainst) {
     target.wins += 1
+    target.beatenCounts.set(opponentPairKey, (target.beatenCounts.get(opponentPairKey) || 0) + 1)
   } else if (scoreFor < scoreAgainst) {
     target.losses += 1
+    target.lossCounts.set(opponentPairKey, (target.lossCounts.get(opponentPairKey) || 0) + 1)
   }
 }
 
 export function buildFreeMatchStats(matches: FreeMatchDetail[], options: BuildStatsOptions = {}) {
   const playersById = new Map<number, Player>()
+  const pairsByKey = new Map<string, PairReference>()
   const playerStats = new Map<number, MutablePlayerStats>()
   const pairStats = new Map<string, MutablePairStats>()
 
   for (const match of matches) {
     const team1: [Player, Player] = [match.team1Player1, match.team1Player2]
     const team2: [Player, Player] = [match.team2Player1, match.team2Player2]
+    const team1Key = getPairKey(team1)
+    const team2Key = getPairKey(team2)
 
     for (const player of [...team1, ...team2]) {
       playersById.set(player.id, player)
     }
+
+    pairsByKey.set(team1Key, { pairKey: team1Key, player1: sortedPair(team1)[0], player2: sortedPair(team1)[1] })
+    pairsByKey.set(team2Key, { pairKey: team2Key, player1: sortedPair(team2)[0], player2: sortedPair(team2)[1] })
 
     if (options.vsPlayerId) {
       const team1HasVsPlayer = team1.some((player) => player.id === options.vsPlayerId)
@@ -164,7 +206,7 @@ export function buildFreeMatchStats(matches: FreeMatchDetail[], options: BuildSt
 
       if (team1HasVsPlayer) {
         const pair = getOrCreatePairStats(pairStats, team2)
-        applyPairCounters(pair, match.score2, match.score1)
+        applyPairCounters(pair, match.score2, match.score1, team1Key)
 
         for (const player of team2) {
           const stats = getOrCreatePlayerStats(playerStats, player)
@@ -174,7 +216,7 @@ export function buildFreeMatchStats(matches: FreeMatchDetail[], options: BuildSt
 
       if (team2HasVsPlayer) {
         const pair = getOrCreatePairStats(pairStats, team1)
-        applyPairCounters(pair, match.score1, match.score2)
+        applyPairCounters(pair, match.score1, match.score2, team2Key)
 
         for (const player of team1) {
           const stats = getOrCreatePlayerStats(playerStats, player)
@@ -188,8 +230,8 @@ export function buildFreeMatchStats(matches: FreeMatchDetail[], options: BuildSt
     const team1Pair = getOrCreatePairStats(pairStats, team1)
     const team2Pair = getOrCreatePairStats(pairStats, team2)
 
-    applyPairCounters(team1Pair, match.score1, match.score2)
-    applyPairCounters(team2Pair, match.score2, match.score1)
+    applyPairCounters(team1Pair, match.score1, match.score2, team2Key)
+    applyPairCounters(team2Pair, match.score2, match.score1, team1Key)
 
     for (const player of team1) {
       const stats = getOrCreatePlayerStats(playerStats, player)
@@ -231,6 +273,8 @@ export function buildFreeMatchStats(matches: FreeMatchDetail[], options: BuildSt
       wins: stats.wins,
       losses: stats.losses,
       winLossRatio: formatWinLossRatio(stats.wins, stats.losses),
+      mostBeatenPairs: getTopPairs(stats.beatenCounts, pairsByKey),
+      mostLossPairs: getTopPairs(stats.lossCounts, pairsByKey),
     }))
     .sort((a, b) =>
       b.matchesPlayed - a.matchesPlayed ||
