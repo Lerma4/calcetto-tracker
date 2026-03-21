@@ -586,7 +586,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
             <th class="pr-3 md:pr-4">PT</th>
           </tr>
         </thead>
-        <TransitionGroup tag="tbody" name="list">
+        <tbody>
           <template v-for="(row, idx) in standings" :key="row.team.id">
             <tr
               class="group/row transition-all duration-300 hover:bg-base-200 md:cursor-default cursor-pointer"
@@ -628,44 +628,54 @@ const handleSaveMatchTeams = async (matchId: number) => {
                 </div>
               </td>
             </tr>
-            <tr v-if="expandedStandingId === row.team.id" :key="row.team.id + '-expanded'" class="md:hidden">
-              <td :colspan="3" class="px-3 pb-3 pt-0">
-                <div class="grid grid-cols-4 gap-2 bg-base-200 rounded-xl p-3 text-center">
-                  <div>
-                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">G</div>
-                    <div class="font-bold text-sm">{{ row.played }}</div>
-                  </div>
-                  <div>
-                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">V</div>
-                    <div class="font-bold text-sm text-success">{{ row.won }}</div>
-                  </div>
-                  <div>
-                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">N</div>
-                    <div class="font-bold text-sm">{{ row.drawn }}</div>
-                  </div>
-                  <div>
-                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">P</div>
-                    <div class="font-bold text-sm text-error">{{ row.lost }}</div>
-                  </div>
-                  <div>
-                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">GF</div>
-                    <div class="font-bold text-sm">{{ row.gf }}</div>
-                  </div>
-                  <div>
-                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">GS</div>
-                    <div class="font-bold text-sm">{{ row.ga }}</div>
-                  </div>
-                  <div class="col-span-2">
-                    <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">Diff. Reti</div>
-                    <div class="font-black text-sm" :class="row.gd >= 0 ? 'text-success' : 'text-error'">
-                      {{ row.gd > 0 ? '+' : '' }}{{ row.gd }}
+            <tr class="md:hidden">
+              <td :colspan="3" class="p-0 border-0">
+                <div
+                  class="grid transition-[grid-template-rows] duration-300 ease-out"
+                  :class="expandedStandingId === row.team.id ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'">
+                  <div class="overflow-hidden">
+                    <div
+                      class="px-3 pt-0 transition-all duration-300 ease-out"
+                      :class="expandedStandingId === row.team.id ? 'translate-y-0 opacity-100 pb-3' : '-translate-y-1 opacity-0 pb-0 pointer-events-none'">
+                      <div class="grid grid-cols-4 gap-2 bg-base-200 rounded-xl p-3 text-center">
+                        <div>
+                          <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">G</div>
+                          <div class="font-bold text-sm">{{ row.played }}</div>
+                        </div>
+                        <div>
+                          <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">V</div>
+                          <div class="font-bold text-sm text-success">{{ row.won }}</div>
+                        </div>
+                        <div>
+                          <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">N</div>
+                          <div class="font-bold text-sm">{{ row.drawn }}</div>
+                        </div>
+                        <div>
+                          <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">P</div>
+                          <div class="font-bold text-sm text-error">{{ row.lost }}</div>
+                        </div>
+                        <div>
+                          <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">GF</div>
+                          <div class="font-bold text-sm">{{ row.gf }}</div>
+                        </div>
+                        <div>
+                          <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">GS</div>
+                          <div class="font-bold text-sm">{{ row.ga }}</div>
+                        </div>
+                        <div class="col-span-2">
+                          <div class="text-[9px] font-bold uppercase tracking-wider opacity-40">Diff. Reti</div>
+                          <div class="font-black text-sm" :class="row.gd >= 0 ? 'text-success' : 'text-error'">
+                            {{ row.gd > 0 ? '+' : '' }}{{ row.gd }}
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </td>
             </tr>
           </template>
-        </TransitionGroup>
+        </tbody>
       </table>
     </div>
 
@@ -1057,18 +1067,3 @@ const handleSaveMatchTeams = async (matchId: number) => {
   </div>
 </template>
 
-<style scoped>
-.list-move,
-.list-enter-active,
-.list-leave-active {
-  transition: all 0.5s ease;
-}
-.list-enter-from,
-.list-leave-to {
-  opacity: 0;
-  transform: translateY(15px);
-}
-.list-leave-active {
-  position: absolute;
-}
-</style>
