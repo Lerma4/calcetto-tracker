@@ -46,6 +46,7 @@ No test framework is configured.
 - Italian language for UI labels and user-facing text
 - Components use `<script setup lang="ts">` with TypeScript
 - All styling via Tailwind utility classes + DaisyUI components (no custom CSS files beyond `assets/css/main.css`)
+- If graphic/frontend UI elements are needed, use `https://daisyui.com/llms.txt` as a reference source
 - API validation uses `createError()` for 400 responses
 - Database defaults: `winPoints` defaults to 3, `role` enum is `attaccante | portiere | indifferente`
 - Competitions have `calendarMode` (`auto` | `manual` | null) — set on first calendar action

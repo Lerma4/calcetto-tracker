@@ -51,6 +51,7 @@ When changing schema or persistence behavior, keep Drizzle schema, API handlers,
 - Keep user-facing copy consistent with the existing Italian product language unless the task explicitly requires otherwise.
 - Preserve existing domain vocabulary such as player roles and competition terms.
 - Match existing styling patterns instead of introducing a new design system.
+- If frontend graphic/UI elements are needed, use `https://daisyui.com/llms.txt` as a reference source.
 
 ## Working Rules
 
