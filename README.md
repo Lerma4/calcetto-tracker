@@ -5,7 +5,7 @@ App web per gestire classifiche e punteggi di calciobalilla tra amici. Permette 
 ## Funzionalità
 
 - **Gestione giocatori** — Aggiungi, modifica, disabilita o elimina giocatori con protezione se già assegnati a squadre
-- **Competizioni** — Crea arene di gioco con punteggio configurabile (vittoria, pareggio, sconfitta)
+- **Competizioni** — Crea arene di gioco con punteggio vittoria configurabile
 - **Squadre** — Composizione automatica o manuale di coppie, con vincolo di unicità per giocatore
 - **Calendario** — Generazione automatica round-robin o inserimento manuale delle partite
 - **Risultati e classifica** — Inserimento punteggi, classifica ordinata per punti, differenza reti e gol fatti
@@ -14,7 +14,7 @@ App web per gestire classifiche e punteggi di calciobalilla tra amici. Permette 
 
 ## Stack tecnologico
 
-- **Frontend:** Nuxt 3, Vue 3 (Composition API), Tailwind CSS, DaisyUI
+- **Frontend:** Nuxt 4, Vue 3 (Composition API), Tailwind CSS, DaisyUI
 - **Backend:** Nitro (server engine di Nuxt), API REST
 - **Database:** SQLite (better-sqlite3) con Drizzle ORM
 
