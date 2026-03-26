@@ -5,7 +5,11 @@
   "private": true,
   "scripts": {
     "build": "nuxt build",
+    "db:migrate:sqlite-to-postgres": "node scripts/migrate-sqlite-to-postgres.mjs",
+    "db:push": "drizzle-kit push",
     "dev": "nuxt dev",
+    "docker:postgres:down": "docker compose down",
+    "docker:postgres:up": "docker compose up -d postgres",
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare"
@@ -17,6 +21,7 @@
     "better-sqlite3": "^12.6.2",
     "drizzle-orm": "^0.45.1",
     "nuxt": "^4.3.1",
+    "pg": "^8.16.3",
     "tailwindcss": "^4.2.1",
     "vue": "^3.5.29",
     "vue-router": "^4.6.4"

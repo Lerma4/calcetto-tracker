@@ -12,21 +12,21 @@ export async function requireAuth(event: H3Event) {
     throw createError({ statusCode: 401, message: 'Non autenticato' });
   }
 
-  const session = db
+  const [session] = await db
     .select()
     .from(sessions)
     .where(eq(sessions.token, token))
-    .get();
+    .limit(1);
 
   if (!session) {
     throw createError({ statusCode: 401, message: 'Sessione non valida' });
   }
 
-  const user = db
+  const [user] = await db
     .select({ id: users.id, username: users.username })
     .from(users)
     .where(eq(users.id, session.userId))
-    .get();
+    .limit(1);
 
   if (!user) {
     throw createError({ statusCode: 401, message: 'Utente non trovato' });

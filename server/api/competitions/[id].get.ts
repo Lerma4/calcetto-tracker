@@ -17,7 +17,7 @@ export default defineEventHandler(async (event) => {
     compTeams.map(async (team) => {
       const [player1] = await db.select().from(players).where(eq(players.id, team.player1Id));
       const [player2] = await db.select().from(players).where(eq(players.id, team.player2Id));
-      return { ...team, player1: { ...player1, disabled: !!player1.disabled }, player2: { ...player2, disabled: !!player2.disabled } };
+      return { ...team, player1, player2 };
     })
   );
 

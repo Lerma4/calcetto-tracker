@@ -69,10 +69,7 @@ export async function ensureActivePlayers(playerIds: number[]) {
 }
 
 function normalizePlayer(player: typeof players.$inferSelect): Player {
-  return {
-    ...player,
-    disabled: !!player.disabled,
-  }
+  return player
 }
 
 export async function getFreeMatchDetailRows(): Promise<FreeMatchDetail[]> {

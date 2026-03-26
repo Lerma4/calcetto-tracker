@@ -13,7 +13,7 @@ export default defineEventHandler(async (event) => {
 
   const currentPlayer = player[0]!;
   const updated = await db.update(players)
-    .set({ disabled: currentPlayer.disabled ? 0 : 1 })
+    .set({ disabled: !currentPlayer.disabled })
     .where(eq(players.id, id))
     .returning();
 

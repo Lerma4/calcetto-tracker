@@ -6,7 +6,7 @@ export default defineEventHandler(async (event) => {
   const token = getCookie(event, 'auth-token');
 
   if (token) {
-    db.delete(sessions).where(eq(sessions.token, token)).run();
+    await db.delete(sessions).where(eq(sessions.token, token));
   }
 
   deleteCookie(event, 'auth-token', { path: '/' });

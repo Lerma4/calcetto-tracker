@@ -15,11 +15,11 @@ export default defineEventHandler(async (event) => {
   }
 
   // Find user
-  const user = db
+  const [user] = await db
     .select()
     .from(users)
     .where(eq(users.username, body.username))
-    .get();
+    .limit(1);
 
   if (!user) {
     throw createError({
@@ -39,10 +39,10 @@ export default defineEventHandler(async (event) => {
 
   // Create session
   const token = crypto.randomUUID();
-  db.insert(sessions).values({
+  await db.insert(sessions).values({
     token,
     userId: user.id,
-  }).run();
+  });
 
   // Set cookie (HttpOnly, 7 days)
   setCookie(event, 'auth-token', token, {
@@ -53,5 +53,5 @@ export default defineEventHandler(async (event) => {
     sameSite: 'lax',
   });
 
-  return { id: user.id, username: user.username, mustChangePassword: !!user.mustChangePassword };
+  return { id: user.id, username: user.username, mustChangePassword: user.mustChangePassword };
 });

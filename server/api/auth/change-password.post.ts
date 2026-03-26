@@ -18,10 +18,9 @@ export default defineEventHandler(async (event) => {
 
   const hashedPassword = await bcrypt.hash(body.newPassword, 10);
 
-  db.update(users)
-    .set({ password: hashedPassword, mustChangePassword: 0 })
-    .where(eq(users.id, user.id))
-    .run();
+  await db.update(users)
+    .set({ password: hashedPassword, mustChangePassword: false })
+    .where(eq(users.id, user.id));
 
   return { success: true };
 });
