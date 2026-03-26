@@ -16,9 +16,27 @@ App web per gestire classifiche e punteggi di calciobalilla tra amici. Permette 
 
 - **Frontend:** Nuxt 4, Vue 3 (Composition API), Tailwind CSS, DaisyUI
 - **Backend:** Nitro (server engine di Nuxt), API REST
-- **Database:** SQLite (better-sqlite3) con Drizzle ORM
+- **Database:** PostgreSQL con Drizzle ORM
 
 ## Setup
+
+Configura le variabili ambiente:
+
+```bash
+cp .env.example .env
+```
+
+Su PowerShell puoi usare:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Avvia PostgreSQL locale via Docker:
+
+```bash
+npm run docker:postgres:up
+```
 
 ```bash
 npm install
@@ -27,10 +45,16 @@ npm install
 Inizializza il database:
 
 ```bash
-npx drizzle-kit push
+npm run db:push
 ```
 
-Se aggiungi nuove tabelle o campi, riesegui `npx drizzle-kit push` prima di usare le nuove feature.
+Se aggiungi nuove tabelle o campi, riesegui `npm run db:push` prima di usare le nuove feature.
+
+Se devi importare dati dal vecchio SQLite:
+
+```bash
+npm run db:migrate:sqlite-to-postgres
+```
 
 ## Avvio in sviluppo
 
@@ -49,10 +73,14 @@ npm run preview
 
 ## Docker in produzione
 
-L'immagine non applica piu automaticamente `drizzle-kit push --force` all'avvio.
+L'immagine richiede `DATABASE_URL` e non applica automaticamente `drizzle-kit push --force` all'avvio.
 
 - Avvio standard: il container parte senza toccare lo schema del database
 - Sync schema esplicito all'avvio: imposta `AUTO_DB_PUSH_ON_START=true`
-- Sync manuale: esegui `npx drizzle-kit push` nel container solo quando vuoi applicare modifiche allo schema
+- Sync manuale: esegui `npm run db:push` nel container solo quando vuoi applicare modifiche allo schema
 
 Questo riduce il rischio di cambi schema distruttivi in produzione.
+
+## Migrazione da SQLite
+
+La procedura completa e documentata in [docs/postgres-migration.md](./docs/postgres-migration.md).

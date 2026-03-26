@@ -14,7 +14,7 @@ These instructions apply to the entire repository.
 - `composables/`: Shared Composition API logic such as `useAuth` and `usePermissions`.
 - `middleware/`: Nuxt route middleware, including global auth handling and public-route exceptions.
 - `server/api/`: Nitro API endpoints for auth, players, competitions, matches, and `free-matches`.
-- `server/database/`: SQLite connection and Drizzle schema.
+- `server/database/`: PostgreSQL connection and Drizzle schema.
 - `server/middleware/`: Server-side request guards, especially for protected API mutations.
 - `server/plugins/`: Server startup hooks and initialization logic, including default admin seeding.
 - `server/routes/`: Nitro custom routes, including websocket handlers.
@@ -23,13 +23,13 @@ These instructions apply to the entire repository.
 - `types/`: Shared TypeScript types.
 - `utils/`: Shared app utilities.
 - `docs/`: Project notes, plans, and design/spec documents.
-- `data/`: SQLite database file storage.
+- `data/`: legacy SQLite backups/source files used during migration.
 
 ## Architecture
 
 - Frontend: Nuxt 4 + Vue 3 with Composition API and `<script setup lang="ts">`.
 - Backend: Nitro server routes under `server/api`, plus websocket handling under `server/routes/ws.ts`.
-- Database: SQLite via `better-sqlite3`, modeled with Drizzle ORM.
+- Database: PostgreSQL, modeled with Drizzle ORM.
 - Styling: Tailwind CSS v4 via `@tailwindcss/vite`, DaisyUI, and shared global CSS.
 - Auth: Cookie-based session auth with client route middleware and a server-side mutation guard.
 - Runtime versioning: the app version is sourced from `package.json` and exposed through `runtimeConfig.public.appVersion`.
@@ -87,7 +87,7 @@ npm install
 Initialize or sync the database schema:
 
 ```bash
-npx drizzle-kit push
+npm run db:push
 ```
 
 Run the development server:
@@ -119,7 +119,7 @@ npm run preview
 ## Production Docker Notes
 
 - The production container does not force database schema changes on startup.
-- Set `AUTO_DB_PUSH_ON_START=true` only when you explicitly want the container to run `npx drizzle-kit push` before booting the app.
+- Set `AUTO_DB_PUSH_ON_START=true` only when you explicitly want the container to run `npm run db:push` before booting the app.
 - Prefer manual backups before applying schema changes in production.
 
 ## Tests
