@@ -199,6 +199,7 @@ const handleStartManualCalendar = async () => {
 
 // Match results - local scores for editing
 const localScores = ref<Record<number, { score1: number | null; score2: number | null; sourceState?: string }>>({})
+const savingResultMatchId = ref<number | null>(null)
 
 const getScores = (match: { id: number; score1: number; score2: number; state: string }) => {
   const current = localScores.value[match.id]
@@ -215,17 +216,31 @@ const getScores = (match: { id: number; score1: number; score2: number; state: s
   return localScores.value[match.id]!
 }
 
+const refreshSavedResult = async (matchId: number) => {
+  try {
+    await handleRefresh(true)
+    delete localScores.value[matchId]
+  } catch (e: any) {
+    errorMsg.value = e.data?.message || 'Errore aggiornamento risultati'
+    setTimeout(() => errorMsg.value = '', 4000)
+  }
+}
+
 const handleSaveResult = async (matchId: number) => {
   const scores = localScores.value[matchId]
-  if (!scores) return
+  if (!scores || savingResultMatchId.value === matchId) return false
   errorMsg.value = ''
+  savingResultMatchId.value = matchId
   try {
     await $fetch(`/api/matches/${matchId}`, { method: 'PUT', body: { score1: scores.score1, score2: scores.score2 } })
-    await refresh()
-    delete localScores.value[matchId]
+    void refreshSavedResult(matchId)
+    return true
   } catch (e: any) {
     errorMsg.value = e.data?.message || 'Errore salvataggio risultato'
     setTimeout(() => errorMsg.value = '', 4000)
+    return false
+  } finally {
+    savingResultMatchId.value = null
   }
 }
 
@@ -239,11 +254,15 @@ const openMobileEdit = (match: { id: number; team1Id: number; team2Id: number; s
   mobileEditModalRef.value?.showModal()
 }
 
-const handleMobileSave = async () => {
-  if (!mobileEditMatch.value) return
-  await handleSaveResult(mobileEditMatch.value.id)
+const closeMobileEdit = () => {
   mobileEditModalRef.value?.close()
   mobileEditMatch.value = null
+}
+
+const handleMobileSave = async () => {
+  if (!mobileEditMatch.value) return
+  const didSave = await handleSaveResult(mobileEditMatch.value.id)
+  if (didSave) closeMobileEdit()
 }
 
 // Matches grouped by matchday
@@ -831,15 +850,20 @@ const handleSaveMatchTeams = async (matchId: number) => {
 
                   <!-- Action buttons (admin only) — desktop inline -->
                   <div v-if="canEdit" class="max-sm:hidden flex items-center gap-1 justify-end shrink-0">
-                    <button @click="handleSaveResult(match.id)" class="btn btn-primary btn-sm btn-square rounded-lg font-bold">
-                      <Icon name="lucide:save" class="w-4 h-4" />
+                    <button
+                      @click="handleSaveResult(match.id)"
+                      class="btn btn-primary btn-sm btn-square rounded-lg font-bold"
+                      :disabled="savingResultMatchId === match.id"
+                    >
+                      <span v-if="savingResultMatchId === match.id" class="loading loading-spinner loading-xs"></span>
+                      <Icon v-else name="lucide:save" class="w-4 h-4" />
                     </button>
                     <button @click="startEditMatch(match)" class="btn btn-ghost btn-sm btn-square rounded-lg">
                       <Icon name="lucide:pencil" class="w-4 h-4" />
                     </button>
                     <button @click="handleResetMatch(match.id)" 
                             class="btn btn-ghost btn-sm btn-square text-warning rounded-lg"
-                            :disabled="match.state !== 'played'"
+                            :disabled="match.state !== 'played' || savingResultMatchId === match.id"
                             title="Azzera Risultato">
                       <Icon name="lucide:rotate-ccw" class="w-4 h-4" />
                     </button>
@@ -1022,7 +1046,7 @@ const handleSaveMatchTeams = async (matchId: number) => {
     </dialog>
 
     <!-- Mobile Score Edit Modal -->
-    <dialog ref="mobileEditModalRef" class="modal">
+    <dialog ref="mobileEditModalRef" class="modal" @close="mobileEditMatch = null">
       <div class="modal-box rounded-3xl p-5">
         <div v-if="mobileEditMatch" class="space-y-4">
           <!-- Team 1 -->
@@ -1044,18 +1068,31 @@ const handleSaveMatchTeams = async (matchId: number) => {
               @input="localScores[mobileEditMatch!.id] = { ...getScores(mobileEditMatch!), score2: ($event.target as HTMLInputElement).value === '' ? null : Number(($event.target as HTMLInputElement).value) }" />
           </div>
           <!-- Actions -->
-          <button @click="handleMobileSave" class="btn btn-primary rounded-xl font-black tracking-widest w-full">
-            <Icon name="lucide:save" class="w-4 h-4" />
-            SALVA
+          <button
+            type="button"
+            @click="handleMobileSave"
+            class="btn btn-primary rounded-xl font-black tracking-widest w-full"
+            :disabled="savingResultMatchId === mobileEditMatch.id"
+          >
+            <span v-if="savingResultMatchId === mobileEditMatch.id" class="loading loading-spinner loading-sm"></span>
+            <Icon v-else name="lucide:save" class="w-4 h-4" />
+            {{ savingResultMatchId === mobileEditMatch.id ? 'SALVATAGGIO...' : 'SALVA' }}
           </button>
           <div class="flex gap-2">
-            <button @click="startEditMatch(mobileEditMatch!); mobileEditModalRef?.close()" class="btn btn-ghost btn-sm rounded-xl flex-1">
+            <button
+              type="button"
+              @click="startEditMatch(mobileEditMatch!); closeMobileEdit()"
+              class="btn btn-ghost btn-sm rounded-xl flex-1"
+              :disabled="savingResultMatchId === mobileEditMatch.id"
+            >
               <Icon name="lucide:pencil" class="w-4 h-4" />
               Modifica Squadre
             </button>
-            <button @click="handleResetMatch(mobileEditMatch!.id); mobileEditModalRef?.close(); mobileEditMatch = null" 
+            <button
+                    type="button"
+                    @click="handleResetMatch(mobileEditMatch!.id); closeMobileEdit()"
                     class="btn btn-ghost btn-sm text-warning rounded-xl flex-1"
-                    :disabled="mobileEditMatch!.state !== 'played'">
+                    :disabled="mobileEditMatch!.state !== 'played' || savingResultMatchId === mobileEditMatch.id">
               <Icon name="lucide:rotate-ccw" class="w-4 h-4" />
               Azzera
             </button>
