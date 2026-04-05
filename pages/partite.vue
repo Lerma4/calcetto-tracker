@@ -29,6 +29,9 @@ const MATCH_FIELDS = [
 
 type MatchField = typeof MATCH_FIELDS[number]
 
+const padDateSegment = (value: number) => `${value}`.padStart(2, '0')
+const getMonthStartDateValue = (date = new Date()) => `${date.getFullYear()}-${padDateSegment(date.getMonth() + 1)}-01`
+
 const { canCreate, canEdit } = usePermissions()
 
 const [
@@ -44,8 +47,10 @@ const editingMatchId = ref<number | null>(null)
 const historyQuery = ref('')
 const currentPage = ref(1)
 const selectedStatsPlayerId = ref<number | null>(null)
+const playerStatsDateFrom = ref(getMonthStartDateValue())
 const statsCurrentPage = ref(1)
 const selectedTeamStatsPairKey = ref<string | null>(null)
+const teamStatsDateFrom = ref(getMonthStartDateValue())
 const teamStatsCurrentPage = ref(1)
 const errorMsg = ref('')
 const successMsg = ref('')
@@ -134,6 +139,40 @@ const filteredMatches = computed(() => {
   return matchRows.value.filter((match) => buildSearchText(match).includes(query))
 })
 
+const parseDateInput = (value: string) => {
+  if (!value) {
+    return null
+  }
+
+  const [year, month, day] = value.split('-').map(Number)
+  if (!year || !month || !day) {
+    return null
+  }
+
+  return new Date(year, month - 1, day, 0, 0, 0, 0)
+}
+
+const filterStatsMatchesByDate = (matches: FreeMatchDetail[], fromDate: string) => {
+  const from = parseDateInput(fromDate)
+
+  if (!from) {
+    return matches
+  }
+
+  return matches.filter((match) => new Date(match.createdAt).getTime() >= from.getTime())
+}
+
+const isPlayerStatsShowingAllHistory = computed(() => !playerStatsDateFrom.value)
+const isTeamStatsShowingAllHistory = computed(() => !teamStatsDateFrom.value)
+
+const togglePlayerStatsFullHistory = () => {
+  playerStatsDateFrom.value = playerStatsDateFrom.value ? '' : getMonthStartDateValue()
+}
+
+const toggleTeamStatsFullHistory = () => {
+  teamStatsDateFrom.value = teamStatsDateFrom.value ? '' : getMonthStartDateValue()
+}
+
 const showHistorySkeleton = computed(() => !hasLoadedHistoryOnce.value && pending.value)
 const totalPages = computed(() => Math.max(1, Math.ceil(filteredMatches.value.length / 10)))
 const paginatedMatches = computed(() => filteredMatches.value.slice((currentPage.value - 1) * 10, currentPage.value * 10))
@@ -154,10 +193,13 @@ watch(totalPages, (value) => {
   }
 })
 
+const playerStatsMatches = computed(() => filterStatsMatchesByDate(statsMatches.value, playerStatsDateFrom.value))
+const teamStatsMatches = computed(() => filterStatsMatchesByDate(statsMatches.value, teamStatsDateFrom.value))
+
 const playersInStats = computed(() => {
   const uniquePlayers = new Map<number, Player>()
 
-  for (const match of statsMatches.value) {
+  for (const match of playerStatsMatches.value) {
     for (const player of [match.team1Player1, match.team1Player2, match.team2Player1, match.team2Player2]) {
       uniquePlayers.set(player.id, player)
     }
@@ -166,22 +208,47 @@ const playersInStats = computed(() => {
   return [...uniquePlayers.values()].sort((a, b) => playerLabel(a).localeCompare(playerLabel(b), 'it'))
 })
 
-const statsData = computed(() => buildFreeMatchStats(statsMatches.value))
+const playerStatsFilterOptions = computed(() => playersInStats.value.map((player) => ({
+  value: player.id,
+  label: playerFullLabel(player),
+  searchText: [
+    player.name,
+    player.surname,
+    player.nickname || '',
+    playerFullLabel(player),
+  ].join(' '),
+})))
+
+const playerStatsData = computed(() => buildFreeMatchStats(playerStatsMatches.value))
 const playerStatsRows = computed(() => {
   if (!selectedStatsPlayerId.value) {
-    return statsData.value.playerStats
+    return playerStatsData.value.playerStats
   }
 
-  return statsData.value.playerStats.filter((row) => row.player.id === selectedStatsPlayerId.value)
+  return playerStatsData.value.playerStats.filter((row) => row.player.id === selectedStatsPlayerId.value)
 })
+
+const teamStatsData = computed(() => buildFreeMatchStats(teamStatsMatches.value))
+const teamsInStats = computed(() => teamStatsData.value.pairStats)
+
+const teamStatsFilterOptions = computed(() => teamsInStats.value.map((pair) => ({
+  value: pair.pairKey,
+  label: pairFullLabel(pair.player1, pair.player2),
+  searchText: [
+    playerFullLabel(pair.player1),
+    playerFullLabel(pair.player2),
+    pairFullLabel(pair.player1, pair.player2),
+    pairLabel(pair.player1, pair.player2),
+  ].join(' '),
+})))
+
 const teamStatsRows = computed(() => {
   if (!selectedTeamStatsPairKey.value) {
-    return statsData.value.pairStats
+    return teamsInStats.value
   }
 
-  return statsData.value.pairStats.filter((row) => row.pairKey === selectedTeamStatsPairKey.value)
+  return teamsInStats.value.filter((row) => row.pairKey === selectedTeamStatsPairKey.value)
 })
-const teamsInStats = computed(() => statsData.value.pairStats)
 const totalStatsPages = computed(() => Math.max(1, Math.ceil(playerStatsRows.value.length / 10)))
 const paginatedPlayerStatsRows = computed(() => playerStatsRows.value.slice((statsCurrentPage.value - 1) * 10, statsCurrentPage.value * 10))
 const totalTeamStatsPages = computed(() => Math.max(1, Math.ceil(teamStatsRows.value.length / 10)))
@@ -192,8 +259,28 @@ watch(selectedStatsPlayerId, () => {
   statsCurrentPage.value = 1
 })
 
+watch(playerStatsDateFrom, () => {
+  statsCurrentPage.value = 1
+})
+
 watch(selectedTeamStatsPairKey, () => {
   teamStatsCurrentPage.value = 1
+})
+
+watch(teamStatsDateFrom, () => {
+  teamStatsCurrentPage.value = 1
+})
+
+watch(playersInStats, (players) => {
+  if (selectedStatsPlayerId.value && !players.some((player) => player.id === selectedStatsPlayerId.value)) {
+    selectedStatsPlayerId.value = null
+  }
+})
+
+watch(teamsInStats, (teams) => {
+  if (selectedTeamStatsPairKey.value && !teams.some((team) => team.pairKey === selectedTeamStatsPairKey.value)) {
+    selectedTeamStatsPairKey.value = null
+  }
 })
 
 watch(totalStatsPages, (value) => {
@@ -837,16 +924,36 @@ onUnmounted(() => {
           <Icon name="lucide:bar-chart-3" class="inline w-5 h-5 mr-2" />Statistiche Giocatore
         </h2>
         <div class="flex flex-col sm:flex-row sm:items-end gap-3 w-full lg:w-auto">
+          <div class="w-full sm:w-52">
+            <label class="label pb-2">
+              <span class="label-text text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Data da</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <input v-model="playerStatsDateFrom" type="date" class="input rounded-xl w-full" />
+              <button
+                type="button"
+                class="btn btn-square btn-sm rounded-xl shrink-0 transition-colors"
+                :class="isPlayerStatsShowingAllHistory ? 'btn-primary' : 'btn-ghost'"
+                :title="isPlayerStatsShowingAllHistory ? 'Ripristina dal primo giorno del mese' : 'Mostra tutto lo storico'"
+                :aria-label="isPlayerStatsShowingAllHistory ? 'Ripristina dal primo giorno del mese' : 'Mostra tutto lo storico'"
+                @click="togglePlayerStatsFullHistory"
+              >
+                <Icon name="lucide:history" class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
           <div class="w-full lg:w-80">
             <label class="label pb-2">
               <span class="label-text text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Filtro giocatore</span>
             </label>
-            <select v-model="selectedStatsPlayerId" class="select rounded-xl w-full">
-              <option :value="null">Tutti i giocatori</option>
-              <option v-for="player in playersInStats" :key="`vs-${player.id}`" :value="player.id">
-                {{ playerFullLabel(player) }}
-              </option>
-            </select>
+            <BaseSearchSelect
+              v-model="selectedStatsPlayerId"
+              :options="playerStatsFilterOptions"
+              placeholder="Tutti i giocatori"
+              filter-placeholder="Filtra giocatore..."
+              empty-option-label="Tutti i giocatori"
+              select-class="rounded-xl"
+            />
           </div>
           <button
             @click="handleStatsRefresh"
@@ -959,16 +1066,36 @@ onUnmounted(() => {
           <Icon name="lucide:users-round" class="inline w-5 h-5 mr-2" />Statistiche Squadra
         </h2>
         <div class="flex flex-col sm:flex-row sm:items-end gap-3 w-full lg:w-auto">
+          <div class="w-full sm:w-52">
+            <label class="label pb-2">
+              <span class="label-text text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Data da</span>
+            </label>
+            <div class="flex items-center gap-2">
+              <input v-model="teamStatsDateFrom" type="date" class="input rounded-xl w-full" />
+              <button
+                type="button"
+                class="btn btn-square btn-sm rounded-xl shrink-0 transition-colors"
+                :class="isTeamStatsShowingAllHistory ? 'btn-primary' : 'btn-ghost'"
+                :title="isTeamStatsShowingAllHistory ? 'Ripristina dal primo giorno del mese' : 'Mostra tutto lo storico'"
+                :aria-label="isTeamStatsShowingAllHistory ? 'Ripristina dal primo giorno del mese' : 'Mostra tutto lo storico'"
+                @click="toggleTeamStatsFullHistory"
+              >
+                <Icon name="lucide:history" class="w-4 h-4" />
+              </button>
+            </div>
+          </div>
           <div class="w-full lg:w-80">
             <label class="label pb-2">
               <span class="label-text text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Filtro squadra</span>
             </label>
-            <select v-model="selectedTeamStatsPairKey" class="select rounded-xl w-full">
-              <option :value="null">Tutte le squadre</option>
-              <option v-for="pair in teamsInStats" :key="`pair-stats-${pair.pairKey}`" :value="pair.pairKey">
-                {{ pairFullLabel(pair.player1, pair.player2) }}
-              </option>
-            </select>
+            <BaseSearchSelect
+              v-model="selectedTeamStatsPairKey"
+              :options="teamStatsFilterOptions"
+              placeholder="Tutte le squadre"
+              filter-placeholder="Filtra squadra..."
+              empty-option-label="Tutte le squadre"
+              select-class="rounded-xl"
+            />
           </div>
           <button
             @click="handleStatsRefresh"
