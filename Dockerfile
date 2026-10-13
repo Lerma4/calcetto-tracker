@@ -3,7 +3,7 @@ FROM node:22-alpine AS build
 WORKDIR /app
 
 COPY package.json package-lock.json* ./
-RUN npm install
+RUN npm ci
 
 COPY . .
 RUN npm run build
@@ -18,6 +18,7 @@ COPY --from=build /app/package.json package.json
 COPY --from=build /app/drizzle.config.ts drizzle.config.ts
 COPY --from=build /app/server/database/schema.ts server/database/schema.ts
 COPY docker-entrypoint.sh docker-entrypoint.sh
+COPY scripts/backup-db.mjs scripts/backup-db.mjs
 
 RUN mkdir -p data
 RUN chmod +x docker-entrypoint.sh

@@ -121,6 +121,11 @@ npm run preview
 - The production container does not force database schema changes on startup.
 - Set `AUTO_DB_PUSH_ON_START=true` only when you explicitly want the container to run `npx drizzle-kit push` before booting the app.
 - Prefer manual backups before applying schema changes in production.
+- K3s manifests live in `Lerma4/k3s-argocd-gitops`, overlay `apps/calcetto/overlays/calcetto`; the runbook is `docs/CALCETTO-MIGRATION.md` there.
+- `.github/workflows/publish.yml` publishes on main and updates GitOps with `GITOPS_REPO_TOKEN`. Branch dispatches only publish. Dokploy tags remain separate until cutover.
+- Initial GitOps deployment has zero replicas and disabled autosync until restore/cutover. Keep one replica with Recreate for SQLite and in-memory WebSocket peers.
+- `REQUIRE_EXISTING_DB=true` rejects missing/empty data. Keep `AUTO_DB_PUSH_ON_START=false` in K3s; no automatic schema/seed hooks.
+- `node scripts/backup-db.mjs <new-path>` validates and snapshots SQLite including WAL without overwriting files. Check with `node --test scripts/backup-db.test.mjs`.
 
 ## Tests
 
